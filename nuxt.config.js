@@ -10,7 +10,9 @@ export default defineNuxtConfig({
       supabaseKey: process.env.SUPABASE_KEY,
     }
   },
-
+  supabase: {
+    redirect: false, // Disable redirects for auth by default
+  },
   shadcn: {
     /**
      * Prefix for all the imported component

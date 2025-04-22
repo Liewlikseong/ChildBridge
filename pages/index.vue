@@ -1,12 +1,19 @@
-<script>
-export default {
-  async asyncData({ redirect }) {
-    // Server-side redirection
-    redirect("/homepage");
-  },
-  mounted() {
-    // Client-side redirection
-    this.$router.push("/homepage");
-  },
-};
+<template>
+  <div>
+    <NuxtLayout>
+      <ClientOnly>
+        <div class="min-h-screen flex items-center justify-center">
+          <div class="text-center">
+            <p class="text-lg text-neutral-600">Redirecting to homepage...</p>
+          </div>
+        </div>
+      </ClientOnly>
+    </NuxtLayout>
+  </div>
+</template>
+
+<script setup>
+definePageMeta({
+  redirect: '/homepage'
+})
 </script>
