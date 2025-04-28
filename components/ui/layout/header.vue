@@ -28,8 +28,13 @@
           <NuxtLink to="/updates" class="text-neutral-700 hover:text-primary-600 transition duration-200 ease-in-out px-3 py-2 rounded-md text-sm font-medium">Updates</NuxtLink>
 
           <template v-if="!user">
-            <button @click="navigateTo('/auth/login')" class="ml-4 rounded-full text-sm px-4 py-2 border border-neutral-300 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-600">Login</button>
-            <button @click="navigateTo('/auth/register')" class="ml-2 rounded-full text-sm px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">Sign Up</button>
+            <NuxtLink to="/auth/login" class="ml-4 rounded-full text-sm px-4 py-2 border border-neutral-300 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-600">
+              Login
+            </NuxtLink>
+
+            <NuxtLink to="/auth/register" class="ml-2 rounded-full text-sm px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
+              Sign Up
+            </NuxtLink>
           </template>
 
           <template v-else>
@@ -79,15 +84,15 @@
 
 <script setup>
 import { ref } from 'vue';
+import { navigateTo } from '#app';
 import { useSupabaseUser } from '#imports';
-import { useAuth } from '~/composables/useAuth';
+
 
 const user = useSupabaseUser();
 const { signOut } = useAuth();
 
-// Very simple toggle state
-const isMenuOpen = ref(false);
-const userMenuOpen = ref(false);
+const mobileMenuOpen = ref(false);  // Correct one
+const userMenuOpen = ref(false);    // For dropdown
 
 const logout = async () => {
   try {
@@ -98,4 +103,5 @@ const logout = async () => {
     console.error('Error logging out:', error);
   }
 };
+
 </script>

@@ -34,7 +34,6 @@
               <li><NuxtLink to="/about" class="text-neutral-400 hover:text-white transition-colors">About Us</NuxtLink></li>
               <li><NuxtLink to="/donate" class="text-neutral-400 hover:text-white transition-colors">Donate</NuxtLink></li>
               <li><NuxtLink to="/updates" class="text-neutral-400 hover:text-white transition-colors">Updates</NuxtLink></li>
-              <li><NuxtLink to="/leaderboard" class="text-neutral-400 hover:text-white transition-colors">Leaderboard</NuxtLink></li>
             </ul>
           </div>
           
