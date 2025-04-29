@@ -1,14 +1,15 @@
-<script setup>
-import Header from '@/components/ui/layout/header.vue'
-import Footer from '@/components/ui/layout/footer.vue'
-</script>
-
 <template>
   <div class="flex flex-col min-h-screen">
-    <Header />
-    <div class="grow">
+    <LayoutHeader />
+    
+    <main class="flex-grow">
       <slot />
-    </div>
-    <Footer />
+    </main>
+    
+    <LayoutFooter />
   </div>
 </template>
+
+<script setup>
+// Default layout with header and footer
+</script>

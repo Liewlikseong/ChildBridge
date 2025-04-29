@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-definePageMeta({
-  redirect: '/homepage'
-})
+onMounted(() => {
+  navigateTo('/home');
+});
 </script>
