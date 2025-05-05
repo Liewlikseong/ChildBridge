@@ -77,6 +77,31 @@
             />
           </div>
           <div>
+            <label for="avatar" class="block text-sm font-medium text-neutral-700 mb-1">Profile Picture</label>
+            <div class="flex items-start space-x-4">
+              <div class="flex-shrink-0">
+                <div v-if="avatarPreview" class="w-24 h-24 rounded-full overflow-hidden bg-neutral-100">
+                  <img :src="avatarPreview" alt="Profile preview" class="w-full h-full object-cover" />
+                </div>
+                <div v-else class="w-24 h-24 rounded-full bg-neutral-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-grow">
+                <input
+                  type="file"
+                  id="avatar"
+                  accept="image/*"
+                  @change="handleAvatarUpload"
+                  class="input"
+                />
+                <p class="mt-1 text-sm text-neutral-500">Upload a profile picture (optional)</p>
+              </div>
+            </div>
+          </div>
+          <div>
             <label class="block text-sm font-medium text-neutral-700 mb-1">Account Type</label>
             <div class="grid grid-cols-2 gap-4">
               <button
@@ -188,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { useSupabaseClient } from '#imports';
 
 definePageMeta({
@@ -205,6 +230,42 @@ const userType = ref('donor');
 const agreeToTerms = ref(false);
 const errorMsg = ref('');
 const isLoading = ref(false);
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
+
+const handleAvatarUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    avatarFile.value = file;
+    // Create preview URL
+    avatarPreview.value = URL.createObjectURL(file);
+  }
+};
+
+const uploadAvatar = async (userId) => {
+  if (!avatarFile.value) return null;
+
+  const fileExt = avatarFile.value.name.split('.').pop();
+  const fileName = `${userId}.${fileExt}`;
+  const filePath = `avatars/${fileName}`;
+
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, avatarFile.value);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    return null;
+  }
+};
 
 const register = async () => {
   errorMsg.value = '';
@@ -242,7 +303,7 @@ const register = async () => {
   }
 
   try {
-    const { error } = await supabase.auth.signUp({
+    const { data: { user }, error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value,
       options: {
@@ -250,24 +311,31 @@ const register = async () => {
           first_name: firstName.value,
           last_name: lastName.value,
           role: userType.value
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/auth/verify-email`
       }
     });
 
-    if (error) {
-      errorMsg.value = error.message || 'Failed to create account';
-      return;
+    if (error) throw error;
+
+    if (!user) {
+      throw new Error('Registration failed');
     }
+
+    // Upload avatar if provided
+    const avatarUrl = await uploadAvatar(user.id);
 
     // Create a profile in the profiles table
     const { error: profileError } = await supabase
       .from('profiles')
       .insert([
         { 
+          id: user.id,
           first_name: firstName.value, 
           last_name: lastName.value,
           email: email.value,
-          role: userType.value
+          role: userType.value,
+          avatar_url: avatarUrl
         }
       ]);
 
@@ -321,4 +389,11 @@ const signUpWithFacebook = async () => {
     errorMsg.value = 'Failed to sign up with Facebook';
   }
 };
+
+// Cleanup preview URL when component is unmounted
+onUnmounted(() => {
+  if (avatarPreview.value) {
+    URL.revokeObjectURL(avatarPreview.value);
+  }
+});
 </script>
