@@ -1,10 +1,10 @@
 <template>
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+  <header class="bg-white border-b border-neutral-200 sticky top-0 z-50">
+    <div class="container-custom py-4">
       <div class="flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink to="/" class="flex items-center space-x-2">
-          <span class="text-3xl font-bold text-primary-600 tracking-tight">ChildBridge</span>
+          <span class="text-2xl font-bold text-primary-600">ChildBridge</span>
         </NuxtLink>
 
         <!-- Mobile menu button -->
@@ -23,29 +23,30 @@
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-2">
-          <NuxtLink to="/about" class="text-neutral-700 hover:text-primary-600 transition duration-200 ease-in-out px-3 py-2 rounded-md text-sm font-medium">About</NuxtLink>
-          <NuxtLink to="/donate" class="text-neutral-700 hover:text-primary-600 transition duration-200 ease-in-out px-3 py-2 rounded-md text-sm font-medium">Donate</NuxtLink>
-          <NuxtLink to="/updates" class="text-neutral-700 hover:text-primary-600 transition duration-200 ease-in-out px-3 py-2 rounded-md text-sm font-medium">Updates</NuxtLink>
-
+          <NuxtLink to="/about" class="navbar-link">About</NuxtLink>
+          <NuxtLink to="/donate" class="navbar-link">Donate</NuxtLink>
+          <NuxtLink to="/updates" class="navbar-link">Updates</NuxtLink>
           <template v-if="!user">
-            <button @click="navigateTo('/auth/login')" class="ml-4 rounded-full text-sm px-4 py-2 border border-neutral-300 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-600">Login</button>
-            <button @click="navigateTo('/auth/register')" class="ml-2 rounded-full text-sm px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">Sign Up</button>
+            <NuxtLink to="/auth/login" class="btn btn-outline ml-4">Login</NuxtLink>
+            <NuxtLink to="/auth/register" class="btn btn-primary ml-2">Sign Up</NuxtLink>
           </template>
-
           <template v-else>
             <div class="relative ml-4" ref="userMenuContainer">
-              <button @click="userMenuOpen = !userMenuOpen" class="flex items-center space-x-1 text-neutral-700 hover:text-neutral-900 transition">
+              <button 
+                @click="userMenuOpen = !userMenuOpen" 
+                class="flex items-center space-x-1 text-neutral-700 hover:text-neutral-900"
+              >
                 <span>{{ user.email }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-
-              <div v-if="userMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-md border border-gray-100 py-2 z-50">
+              
+              <div v-if="userMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                 <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Profile</NuxtLink>
                 <NuxtLink to="/donations" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">My Donations</NuxtLink>
                 <NuxtLink to="/messages" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Messages</NuxtLink>
-                <button @click="logout" class="block px-4 py-2 text-sm text-left text-neutral-700 hover:bg-neutral-100 w-full">Logout</button>
+                <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Logout</button>
               </div>
             </div>
           </template>
@@ -59,7 +60,6 @@
         <NuxtLink to="/about" class="block py-2 text-neutral-700">About</NuxtLink>
         <NuxtLink to="/donate" class="block py-2 text-neutral-700">Donate</NuxtLink>
         <NuxtLink to="/updates" class="block py-2 text-neutral-700">Updates</NuxtLink>
-        <NuxtLink to="/leaderboard" class="block py-2 text-neutral-700">Leaderboard</NuxtLink>
         <template v-if="!user">
           <NuxtLink to="/auth/login" class="block py-2 text-neutral-700">Login</NuxtLink>
           <NuxtLink to="/auth/register" class="block py-2 text-primary-600 font-medium">Sign Up</NuxtLink>
@@ -78,24 +78,37 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useSupabaseUser } from '#imports';
-import { useAuth } from '~/composables/useAuth';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useSupabaseClient, useSupabaseUser } from '#imports';
 
 const user = useSupabaseUser();
-const { signOut } = useAuth();
-
-// Very simple toggle state
-const isMenuOpen = ref(false);
+const supabase = useSupabaseClient();
+const mobileMenuOpen = ref(false);
 const userMenuOpen = ref(false);
+const userMenuContainer = ref(null);
 
 const logout = async () => {
   try {
-    await signOut();
-    navigateTo('/');
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
     userMenuOpen.value = false;
+    navigateTo('/');
   } catch (error) {
     console.error('Error logging out:', error);
   }
 };
+
+const handleClickOutside = (event) => {
+  if (userMenuContainer.value && !userMenuContainer.value.contains(event.target)) {
+    userMenuOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
