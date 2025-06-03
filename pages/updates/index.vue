@@ -30,8 +30,16 @@
           <div 
             v-for="update in displayedUpdates" 
             :key="update.id" 
-            class="card hover:shadow-lg transition-shadow"
+            class="card hover:shadow-lg transition-shadow relative"
           >
+            <!-- Unpublished Badge (Staff Only) -->
+            <div 
+              v-if="isStaff && !update.published"
+              class="absolute top-2 left-2 z-10 bg-yellow-500 text-white text-xs font-medium px-2 py-1 rounded-full"
+            >
+              Draft
+            </div>
+
             <!-- Media Display -->
             <div class="aspect-w-16 aspect-h-9 overflow-hidden relative">
               <!-- Multiple Media Display -->
@@ -140,12 +148,21 @@ const loading = ref(true);
 const error = ref(null);
 const isStaff = ref(false);
 
-// Computed property to handle guest vs authenticated user view
+// Computed property to handle guest vs authenticated user view and staff filter
 const displayedUpdates = computed(() => {
-  if (!user.value && updates.value.length > 3) {
-    return updates.value.slice(0, 3);
+  let filteredUpdates = updates.value;
+  
+  // If user is not staff, only show published updates
+  if (!isStaff.value) {
+    filteredUpdates = updates.value.filter(update => update.published === true);
   }
-  return updates.value;
+  
+  // If user is not authenticated and there are more than 3 updates, limit to 3
+  if (!user.value && filteredUpdates.length > 3) {
+    return filteredUpdates.slice(0, 3);
+  }
+  
+  return filteredUpdates;
 });
 
 // Check if user is staff
@@ -169,11 +186,17 @@ const checkUserRole = async () => {
 // Fetch updates
 const fetchUpdates = async () => {
   try {
-    const { data, error: fetchError } = await supabase
+    let query = supabase
       .from('updates')
       .select('*')
-      .eq('published', true)
       .order('created_at', { ascending: false });
+
+    // If user is not staff, only fetch published updates
+    if (!isStaff.value) {
+      query = query.eq('published', true);
+    }
+
+    const { data, error: fetchError } = await query;
 
     if (fetchError) throw fetchError;
     updates.value = data;
