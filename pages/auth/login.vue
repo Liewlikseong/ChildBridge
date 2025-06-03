@@ -7,104 +7,77 @@
           Sign in to your ChildBridge account
         </p>
       </div>
-      <div class="mt-8">
-        <div class="rounded-md shadow-sm space-y-4">
-          <div>
-            <label for="email" class="block text-sm font-medium text-neutral-700 mb-1">Email address</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              required
-              v-model="email"
-              class="input"
-              :class="{ 'border-error-500 focus:ring-error-500': errorMsg }"
-              placeholder="Enter your email"
-            />
+
+      <form @submit.prevent="login" class="mt-8 space-y-6">
+        <div>
+          <label for="email" class="block text-sm font-medium text-neutral-700">Email</label>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            required
+            class="input mt-1"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-neutral-700">Password</label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            required
+            class="input mt-1"
+          />
+        </div>
+
+        <div v-if="error" class="text-error-600 text-sm bg-error-50 p-3 rounded">
+          {{ error }}
+        </div>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full btn btn-primary"
+        >
+          {{ loading ? 'Signing in...' : 'Sign in' }}
+        </button>
+
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-neutral-300"></div>
           </div>
-          <div>
-            <div class="flex items-center justify-between">
-              <label for="password" class="block text-sm font-medium text-neutral-700 mb-1">Password</label>
-              <a href="#" class="text-sm font-medium text-primary-600 hover:text-primary-500">
-                Forgot your password?
-              </a>
-            </div>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-              v-model="password"
-              class="input"
-              :class="{ 'border-error-500 focus:ring-error-500': errorMsg }"
-              placeholder="Enter your password"
-            />
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-neutral-500">Or continue with</span>
           </div>
         </div>
 
-        <div v-if="errorMsg" class="mt-4 text-sm text-error-600 bg-error-50 p-3 rounded-md">
-          {{ errorMsg }}
-        </div>
-
-        <div class="mt-6">
+        <div class="grid grid-cols-2 gap-3">
           <button
             type="button"
-            @click="login"
-            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            :disabled="isLoading"
+            @click="signInWithGoogle"
+            class="btn btn-outline flex justify-center items-center"
           >
-            <span v-if="isLoading" class="mr-2">
-              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-            {{ isLoading ? 'Signing in...' : 'Sign in' }}
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2" />
+            Google
+          </button>
+          <button
+            type="button"
+            @click="signInWithFacebook"
+            class="btn btn-outline flex justify-center items-center"
+          >
+            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" class="w-5 h-5 mr-2" />
+            Facebook
           </button>
         </div>
 
-        <div class="mt-6">
-          <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-neutral-300"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white text-neutral-500">Or continue with</span>
-            </div>
-          </div>
-
-          <div class="mt-6 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              @click="signInWithGoogle"
-              class="w-full inline-flex justify-center py-2 px-4 border border-neutral-300 rounded-md shadow-sm bg-white text-sm font-medium text-neutral-500 hover:bg-neutral-50"
-            >
-              <span class="sr-only">Sign in with Google</span>
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google logo" />
-            </button>
-
-            <button
-              type="button"
-              @click="signInWithFacebook"
-              class="w-full inline-flex justify-center py-2 px-4 border border-neutral-300 rounded-md shadow-sm bg-white text-sm font-medium text-neutral-500 hover:bg-neutral-50"
-            >
-              <span class="sr-only">Sign in with Facebook</span>
-              <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" class="w-5 h-5" alt="Facebook logo" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="text-center">
-        <p class="text-sm text-neutral-600">
+        <p class="text-center text-sm text-neutral-600">
           Don't have an account?
           <NuxtLink to="/auth/register" class="font-medium text-primary-600 hover:text-primary-500">
             Sign up
           </NuxtLink>
         </p>
-      </div>
+      </form>
     </div>
   </div>
 </template>
@@ -113,84 +86,61 @@
 import { ref } from 'vue';
 import { useSupabaseClient } from '#imports';
 
-definePageMeta({
-  layout: false
-});
-
 const supabase = useSupabaseClient();
+const loading = ref(false);
+const error = ref('');
 const email = ref('');
 const password = ref('');
-const errorMsg = ref('');
-const isLoading = ref(false);
-
-const validateForm = () => {
-  if (!email.value || !email.value.trim()) {
-    errorMsg.value = 'Please enter your email address';
-    return false;
-  }
-  if (!password.value || !password.value.trim()) {
-    errorMsg.value = 'Please enter your password';
-    return false;
-  }
-  return true;
-};
 
 const login = async () => {
-  errorMsg.value = '';
-  if (!validateForm()) return;
-  
-  isLoading.value = true;
+  loading.value = true;
+  error.value = '';
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.value.trim(),
-      password: password.value.trim()
+    const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value
     });
 
-    if (error) {
-      errorMsg.value = error.message || 'Failed to sign in';
-      return;
-    }
+    if (signInError) throw signInError;
 
-    navigateTo('/');
-  } catch (error) {
-    errorMsg.value = error.message || 'An unexpected error occurred';
+    if (user) {
+      navigateTo('/');
+    }
+  } catch (err) {
+    error.value = err.message;
   } finally {
-    isLoading.value = false;
+    loading.value = false;
   }
 };
 
 const signInWithGoogle = async () => {
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`
       }
     });
 
-    if (error) {
-      errorMsg.value = error.message;
-    }
-  } catch (error) {
-    errorMsg.value = 'Failed to sign in with Google';
+    if (authError) throw authError;
+  } catch (err) {
+    error.value = 'Failed to sign in with Google';
   }
 };
 
 const signInWithFacebook = async () => {
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`
       }
     });
 
-    if (error) {
-      errorMsg.value = error.message;
-    }
-  } catch (error) {
-    errorMsg.value = 'Failed to sign in with Facebook';
+    if (authError) throw authError;
+  } catch (err) {
+    error.value = 'Failed to sign in with Facebook';
   }
 };
 </script>

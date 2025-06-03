@@ -11,9 +11,12 @@
             <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">Bridge the Gap to Brighter Futures</h1>
             <p class="text-xl opacity-90 mb-8 max-w-lg">Connect with children at Jing Sun Welfare Society and make a lasting impact through transparent donations and direct communication.</p>
             <div class="flex flex-wrap gap-4">
-              <UiButton variant="accent" to="/donate" class="px-6 py-3 transform hover:scale-105">
+               <NuxtLink to="/donate">
+                <UiButton variant="accent" class="px-6 py-3 transform hover:scale-105">
                 Donate Now
               </UiButton>
+            </NuxtLink>
+              
               <UiButton variant="outline" to="/about" class="px-6 py-3 border-2 border-white text-white hover:bg-white/10">
                 Learn More
               </UiButton>

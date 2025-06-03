@@ -7,207 +7,244 @@
           Join ChildBridge to support children in need
         </p>
       </div>
-      <div class="mt-8">
-        <div class="rounded-md shadow-sm space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="first-name" class="block text-sm font-medium text-neutral-700 mb-1">First name</label>
-              <input
-                id="first-name"
-                name="first-name"
-                type="text"
-                required
-                v-model="firstName"
-                class="input"
-                placeholder="Enter your first name"
-              />
-            </div>
-            <div>
-              <label for="last-name" class="block text-sm font-medium text-neutral-700 mb-1">Last name</label>
-              <input
-                id="last-name"
-                name="last-name"
-                type="text"
-                required
-                v-model="lastName"
-                class="input"
-                placeholder="Enter your last name"
-              />
-            </div>
-          </div>
+
+      <!-- Role Selection -->
+      <div class="grid grid-cols-2 gap-4">
+        <button
+          @click="formData.role = 'donor'"
+          :class="[
+            'p-4 rounded-lg text-center transition-all',
+            formData.role === 'donor'
+              ? 'bg-primary-50 border-2 border-primary-500 text-primary-700'
+              : 'border-2 border-neutral-200 hover:bg-neutral-50'
+          ]"
+        >
+          <div class="font-medium mb-2">Donor</div>
+          <p class="text-sm text-neutral-600">Support children through donations</p>
+        </button>
+        <button
+          @click="formData.role = 'staff'"
+          :class="[
+            'p-4 rounded-lg text-center transition-all',
+            formData.role === 'staff'
+              ? 'bg-primary-50 border-2 border-primary-500 text-primary-700'
+              : 'border-2 border-neutral-200 hover:bg-neutral-50'
+          ]"
+        >
+          <div class="font-medium mb-2">Staff</div>
+          <p class="text-sm text-neutral-600">Manage and coordinate activities</p>
+        </button>
+      </div>
+
+      <form @submit.prevent="register" class="mt-8 space-y-6">
+        <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-neutral-700 mb-1">Email address</label>
+            <label for="first-name" class="block text-sm font-medium text-neutral-700">First name</label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              autocomplete="email"
+              id="first-name"
+              v-model="formData.firstName"
+              type="text"
               required
-              v-model="email"
-              class="input"
-              :class="{ 'border-error-500 focus:ring-error-500': errorMsg }"
-              placeholder="Enter your email"
+              class="input mt-1"
             />
           </div>
           <div>
-            <label for="password" class="block text-sm font-medium text-neutral-700 mb-1">Password</label>
+            <label for="last-name" class="block text-sm font-medium text-neutral-700">Last name</label>
             <input
-              id="password"
-              name="password"
-              type="password"
-              autocomplete="new-password"
+              id="last-name"
+              v-model="formData.lastName"
+              type="text"
               required
-              v-model="password"
-              class="input"
-              :class="{ 'border-error-500 focus:ring-error-500': errorMsg }"
-              placeholder="Create a password (min. 8 characters)"
+              class="input mt-1"
             />
           </div>
-          <div>
-            <label for="confirm-password" class="block text-sm font-medium text-neutral-700 mb-1">Confirm password</label>
-            <input
-              id="confirm-password"
-              name="confirm-password"
-              type="password"
-              required
-              v-model="confirmPassword"
-              class="input"
-              :class="{ 'border-error-500 focus:ring-error-500': errorMsg }"
-              placeholder="Confirm your password"
-            />
-          </div>
-          <div>
-            <label for="avatar" class="block text-sm font-medium text-neutral-700 mb-1">Profile Picture</label>
-            <div class="flex items-start space-x-4">
-              <div class="flex-shrink-0">
-                <div v-if="avatarPreview" class="w-24 h-24 rounded-full overflow-hidden bg-neutral-100">
-                  <img :src="avatarPreview" alt="Profile preview" class="w-full h-full object-cover" />
-                </div>
-                <div v-else class="w-24 h-24 rounded-full bg-neutral-100 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-neutral-700">Email</label>
+          <input
+            id="email"
+            v-model="formData.email"
+            type="email"
+            required
+            class="input mt-1"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-neutral-700">Password</label>
+          <input
+            id="password"
+            v-model="formData.password"
+            type="password"
+            required
+            class="input mt-1"
+          />
+        </div>
+
+        <div>
+          <label for="confirm-password" class="block text-sm font-medium text-neutral-700 mb-1">Confirm password</label>
+          <input
+            id="confirm-password"
+            name="confirm-password"
+            type="password"
+            required
+            v-model="confirmPassword"
+            class="input"
+            :class="{ 'border-error-500 focus:ring-error-500': errorMsg }"
+            placeholder="Confirm your password"
+          />
+        </div>
+
+        <div>
+          <label for="gender" class="block text-sm font-medium text-neutral-700">Gender</label>
+          <select
+            id="gender"
+            v-model="formData.gender"
+            required
+            class="input mt-1"
+          >
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="birthDate" class="block text-sm font-medium text-neutral-700">Birth Date</label>
+          <input
+            id="birthDate"
+            v-model="formData.birthDate"
+            type="date"
+            required
+            class="input mt-1"
+          />
+        </div>
+
+        <div>
+          <label for="occupation" class="block text-sm font-medium text-neutral-700">Occupation</label>
+          <select
+            id="occupation"
+            v-model="formData.occupation"
+            class="input mt-1"
+          >
+            <option value="">Select occupation</option>
+            <option value="student">Student</option>
+            <option value="unemployed">Unemployed</option>
+            <option value="homeless">Homeless</option>
+            <option value="employed">Employed</option>
+            <option value="self-employed">Self-Employed</option>
+            <option value="retired">Retired</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <!-- Avatar Upload Section -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-1">Profile Picture</label>
+          <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md">
+            <div class="space-y-1 text-center">
+              <div v-if="avatarPreview" class="mb-4">
+                <img :src="avatarPreview" alt="Avatar Preview" class="mx-auto h-32 w-32 object-cover rounded-full" />
               </div>
-              <div class="flex-grow">
-                <input
-                  type="file"
-                  id="avatar"
-                  accept="image/*"
-                  @change="handleAvatarUpload"
-                  class="input"
-                />
-                <p class="mt-1 text-sm text-neutral-500">Upload a profile picture (optional)</p>
+              <div class="flex text-sm text-neutral-600">
+                <label for="avatar-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                  <span>Upload a photo</span>
+                  <input 
+                    id="avatar-upload" 
+                    type="file" 
+                    class="sr-only" 
+                    @change="handleAvatarUpload"
+                    accept="image/*"
+                  />
+                </label>
+                <p class="pl-1">or drag and drop</p>
               </div>
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Account Type</label>
-            <div class="grid grid-cols-2 gap-4">
+              <p class="text-xs text-neutral-500">
+                PNG, JPG, GIF up to 6MB
+              </p>
               <button
+                v-if="formData.avatarUrl"
                 type="button"
-                @click="userType = 'donor'"
-                class="p-4 border rounded-lg text-center transition-colors"
-                :class="userType === 'donor' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-neutral-200 hover:bg-neutral-50'"
+                @click="removeAvatar"
+                class="mt-2 text-sm text-red-600 hover:text-red-500"
               >
-                <div class="font-medium mb-1">Donor</div>
-                <div class="text-sm text-neutral-600">Support children through donations</div>
-              </button>
-              <button
-                type="button"
-                @click="userType = 'staff'"
-                class="p-4 border rounded-lg text-center transition-colors"
-                :class="userType === 'staff' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-neutral-200 hover:bg-neutral-50'"
-              >
-                <div class="font-medium mb-1">Staff</div>
-                <div class="text-sm text-neutral-600">Manage orphanage operations</div>
+                Remove photo
               </button>
             </div>
           </div>
-        </div>
-
-        <div class="mt-4">
-          <div class="flex items-start">
-            <div class="flex items-center h-5">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                v-model="agreeToTerms"
-                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
-              />
+          <div v-if="avatarUploadProgress > 0 && avatarUploadProgress < 100" class="mt-2">
+            <div class="bg-neutral-200 rounded-full h-2">
+              <div 
+                class="bg-primary-600 h-2 rounded-full transition-all duration-300" 
+                :style="{ width: `${avatarUploadProgress}%` }"
+              ></div>
             </div>
-            <div class="ml-3 text-sm">
-              <label for="terms" class="font-medium text-neutral-700">I agree to the 
-                <a href="#" class="text-primary-600 hover:text-primary-500">Terms of Service</a> and 
-                <a href="#" class="text-primary-600 hover:text-primary-500">Privacy Policy</a>
-              </label>
-            </div>
+            <p class="text-sm text-neutral-600 mt-1">Uploading... {{ avatarUploadProgress }}%</p>
           </div>
         </div>
 
-        <div v-if="errorMsg" class="mt-4 text-sm text-error-600 bg-error-50 p-3 rounded-md">
-          {{ errorMsg }}
+        <div class="flex items-center">
+          <input
+            id="terms"
+            v-model="formData.agreeToTerms"
+            type="checkbox"
+            required
+            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
+          />
+          <label for="terms" class="ml-2 block text-sm text-neutral-600">
+            I agree to the Terms and Privacy Policy
+          </label>
         </div>
 
-        <div class="mt-6">
+        <div v-if="error" class="text-error-600 text-sm bg-error-50 p-3 rounded">
+          {{ error }}
+        </div>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full btn btn-primary"
+        >
+          {{ loading ? 'Creating account...' : 'Create account' }}
+        </button>
+
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-neutral-300"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-neutral-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
           <button
             type="button"
-            @click="register"
-            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            :disabled="isLoading || !agreeToTerms"
-            :class="{ 'opacity-70 cursor-not-allowed': !agreeToTerms }"
+            @click="signInWithGoogle"
+            class="btn btn-outline flex justify-center items-center"
           >
-            <span v-if="isLoading" class="mr-2">
-              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-            {{ isLoading ? 'Creating account...' : 'Create account' }}
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2" />
+            Google
+          </button>
+          <button
+            type="button"
+            @click="signInWithFacebook"
+            class="btn btn-outline flex justify-center items-center"
+          >
+            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" class="w-5 h-5 mr-2" />
+            Facebook
           </button>
         </div>
 
-        <div class="mt-6">
-          <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-neutral-300"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white text-neutral-500">Or continue with</span>
-            </div>
-          </div>
-
-          <div class="mt-6 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              @click="signUpWithGoogle"
-              class="w-full inline-flex justify-center py-2 px-4 border border-neutral-300 rounded-md shadow-sm bg-white text-sm font-medium text-neutral-500 hover:bg-neutral-50"
-            >
-              <span class="sr-only">Sign up with Google</span>
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google logo" />
-            </button>
-
-            <button
-              type="button"
-              @click="signUpWithFacebook"
-              class="w-full inline-flex justify-center py-2 px-4 border border-neutral-300 rounded-md shadow-sm bg-white text-sm font-medium text-neutral-500 hover:bg-neutral-50"
-            >
-              <span class="sr-only">Sign up with Facebook</span>
-              <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" class="w-5 h-5" alt="Facebook logo" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="text-center">
-        <p class="text-sm text-neutral-600">
+        <p class="text-center text-sm text-neutral-600">
           Already have an account?
           <NuxtLink to="/auth/login" class="font-medium text-primary-600 hover:text-primary-500">
             Sign in
           </NuxtLink>
         </p>
-      </div>
+      </form>
     </div>
   </div>
 </template>
@@ -215,178 +252,200 @@
 <script setup>
 import { ref, onUnmounted } from 'vue';
 import { useSupabaseClient } from '#imports';
-
-definePageMeta({
-  layout: false
-});
+import { v4 as uuidv4 } from 'uuid';
 
 const supabase = useSupabaseClient();
-const firstName = ref('');
-const lastName = ref('');
-const email = ref('');
-const password = ref('');
+
+const loading = ref(false);
+const error = ref('');
 const confirmPassword = ref('');
-const userType = ref('donor');
-const agreeToTerms = ref(false);
 const errorMsg = ref('');
-const isLoading = ref(false);
-const avatarFile = ref(null);
+
+// Avatar upload states
 const avatarPreview = ref(null);
+const avatarUploadProgress = ref(0);
 
-const handleAvatarUpload = (event) => {
+const formData = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  gender: '',
+  birthDate: '',
+  occupation: '',
+  agreeToTerms: false,
+  avatarUrl: '',
+  role: 'donor' // Default role
+});
+
+// Avatar upload handler
+const handleAvatarUpload = async (event) => {
   const file = event.target.files[0];
-  if (file) {
-    avatarFile.value = file;
-    // Create preview URL
-    avatarPreview.value = URL.createObjectURL(file);
+  if (!file) return;
+
+  // Reset states
+  avatarPreview.value = null;
+  avatarUploadProgress.value = 0;
+  error.value = '';
+
+  // Validate file type and size
+  if (!file.type.startsWith('image/')) {
+    error.value = 'Please upload an image file';
+    return;
   }
-};
 
-const uploadAvatar = async (userId) => {
-  if (!avatarFile.value) return null;
+  if (file.size > 6 * 1024 * 1024) { // 6MB limit
+    error.value = 'Image file size must be less than 6MB';
+    return;
+  }
 
-  const fileExt = avatarFile.value.name.split('.').pop();
-  const fileName = `${userId}.${fileExt}`;
-  const filePath = `avatars/${fileName}`;
+  // Create preview
+  avatarPreview.value = URL.createObjectURL(file);
+  avatarUploadProgress.value = 50; // Show some progress
 
   try {
-    const { error: uploadError } = await supabase.storage
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    // Upload file
+    const { data, error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, avatarFile.value);
+      .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
+    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath);
 
-    return publicUrl;
-  } catch (error) {
-    console.error('Error uploading avatar:', error);
-    return null;
+    formData.value.avatarUrl = publicUrl;
+    
+    // Complete the progress
+    avatarUploadProgress.value = 100;
+    
+    // Reset progress after a delay
+    setTimeout(() => {
+      avatarUploadProgress.value = 0;
+    }, 1000);
+
+  } catch (uploadError) {
+    console.error('Error uploading avatar:', uploadError);
+    error.value = `Failed to upload avatar: ${uploadError.message}`;
+    removeAvatar();
+  }
+};
+
+const removeAvatar = () => {
+  if (avatarPreview.value) {
+    URL.revokeObjectURL(avatarPreview.value);
+  }
+  avatarPreview.value = null;
+  formData.value.avatarUrl = '';
+  avatarUploadProgress.value = 0;
+  
+  // Clear the file input
+  const fileInput = document.getElementById('avatar-upload');
+  if (fileInput) {
+    fileInput.value = '';
   }
 };
 
 const register = async () => {
-  errorMsg.value = '';
-  isLoading.value = true;
-
-  // Basic validation
-  if (!firstName.value || !lastName.value) {
-    errorMsg.value = 'Please enter your full name';
-    isLoading.value = false;
+  if (!formData.value.agreeToTerms) {
+    error.value = 'Please agree to the Terms and Privacy Policy';
     return;
   }
 
-  if (!email.value) {
-    errorMsg.value = 'Please enter your email address';
-    isLoading.value = false;
+  if (formData.value.password !== confirmPassword.value) {
+    error.value = 'Passwords do not match';
     return;
   }
 
-  if (password.value.length < 8) {
-    errorMsg.value = 'Password must be at least 8 characters long';
-    isLoading.value = false;
-    return;
-  }
-
-  if (password.value !== confirmPassword.value) {
-    errorMsg.value = 'Passwords do not match';
-    isLoading.value = false;
-    return;
-  }
-
-  if (!agreeToTerms.value) {
-    errorMsg.value = 'You must agree to the Terms of Service and Privacy Policy';
-    isLoading.value = false;
-    return;
-  }
+  loading.value = true;
+  error.value = '';
 
   try {
-    const { data: { user }, error } = await supabase.auth.signUp({
-      email: email.value,
-      password: password.value,
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      email: formData.value.email,
+      password: formData.value.password,
       options: {
         data: {
-          first_name: firstName.value,
-          last_name: lastName.value,
-          role: userType.value
-        },
-        emailRedirectTo: `${window.location.origin}/auth/verify-email`
+          first_name: formData.value.firstName,
+          last_name: formData.value.lastName,
+          avatar_url: formData.value.avatarUrl,
+          role: formData.value.role,
+          gender: formData.value.gender,
+          birth_date: formData.value.birthDate,
+          occupation: formData.value.occupation
+        }
       }
     });
 
-    if (error) throw error;
+    if (signUpError) throw signUpError;
 
-    if (!user) {
-      throw new Error('Registration failed');
-    }
-
-    // Upload avatar if provided
-    const avatarUrl = await uploadAvatar(user.id);
-
-    // Create a profile in the profiles table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([
-        { 
+    if (user) {
+      // Create profile in database (will be available when user confirms email)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
           id: user.id,
-          first_name: firstName.value, 
-          last_name: lastName.value,
-          email: email.value,
-          role: userType.value,
-          avatar_url: avatarUrl
-        }
-      ]);
+          first_name: formData.value.firstName,
+          last_name: formData.value.lastName,
+          email: formData.value.email,
+          avatar_url: formData.value.avatarUrl,
+          gender: formData.value.gender,
+          birth_date: formData.value.birthDate,
+          occupation: formData.value.occupation,
+          role: formData.value.role
+        });
 
-    if (profileError) {
-      console.error('Error creating profile:', profileError);
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Don't throw error here, profile creation can be retried on callback
+      }
+
+      // Redirect to verification page instead of homepage
+      navigateTo(`/auth/verify-email?email=${encodeURIComponent(formData.value.email)}`);
     }
-
-    navigateTo('/auth/confirm');
-  } catch (error) {
-    errorMsg.value = error.message || 'An unexpected error occurred';
+  } catch (err) {
+    console.error('Registration error:', err);
+    error.value = err.message;
   } finally {
-    isLoading.value = false;
+    loading.value = false;
   }
 };
 
-const signUpWithGoogle = async () => {
+const signInWithGoogle = async () => {
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        }
+        redirectTo: `${window.location.origin}/auth/callback`
       }
     });
 
-    if (error) {
-      errorMsg.value = error.message;
-    }
-  } catch (error) {
-    errorMsg.value = 'Failed to sign up with Google';
+    if (authError) throw authError;
+  } catch (err) {
+    console.error('Google sign-in error:', err);
+    error.value = 'Failed to sign in with Google';
   }
 };
 
-const signUpWithFacebook = async () => {
+const signInWithFacebook = async () => {
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: 'email,public_profile'
+        redirectTo: `${window.location.origin}/auth/callback`
       }
     });
 
-    if (error) {
-      errorMsg.value = error.message;
-    }
-  } catch (error) {
-    errorMsg.value = 'Failed to sign up with Facebook';
+    if (authError) throw authError;
+  } catch (err) {
+    console.error('Facebook sign-in error:', err);
+    error.value = 'Failed to sign in with Facebook';
   }
 };
 
@@ -395,5 +454,10 @@ onUnmounted(() => {
   if (avatarPreview.value) {
     URL.revokeObjectURL(avatarPreview.value);
   }
+});
+
+// Set page title
+useHead({
+  title: 'Create Account - ChildBridge'
 });
 </script>
