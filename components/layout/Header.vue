@@ -34,15 +34,39 @@
             <div class="relative ml-4" ref="userMenuContainer">
               <button 
                 @click="userMenuOpen = !userMenuOpen" 
-                class="flex items-center space-x-1 text-neutral-700 hover:text-neutral-900"
+                class="flex items-center space-x-2 text-neutral-700 hover:text-neutral-900 p-1 rounded-lg hover:bg-neutral-50"
               >
-                <span>{{ user.email }}</span>
+                <!-- Profile Picture -->
+                <div class="relative">
+                  <img 
+                    v-if="userAvatar" 
+                    :src="userAvatar" 
+                    :alt="userName"
+                    class="w-8 h-8 rounded-full object-cover border-2 border-neutral-200"
+                    @error="handleImageError"
+                  />
+                  <div 
+                    v-else 
+                    class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium"
+                  >
+                    {{ userInitials }}
+                  </div>
+                </div>
+                
+                <!-- User Name -->
+                <span class="text-sm font-medium">{{ userName }}</span>
+                
+                <!-- Dropdown Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               
-              <div v-if="userMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <div v-if="userMenuOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-neutral-200">
+                <div class="px-4 py-2 border-b border-neutral-200">
+                  <p class="text-sm font-medium text-neutral-900">{{ userName }}</p>
+                  <p class="text-xs text-neutral-500">{{ user.email }}</p>
+                </div>
                 <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Profile</NuxtLink>
                 <NuxtLink to="/donations" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">My Donations</NuxtLink>
                 <NuxtLink to="/messages" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Messages</NuxtLink>
@@ -66,6 +90,29 @@
         </template>
         <template v-else>
           <div class="border-t border-neutral-200 my-2 pt-2">
+            <!-- Mobile User Info -->
+            <div class="flex items-center space-x-3 px-2 py-3 mb-2">
+              <div class="relative">
+                <img 
+                  v-if="userAvatar" 
+                  :src="userAvatar" 
+                  :alt="userName"
+                  class="w-10 h-10 rounded-full object-cover border-2 border-neutral-200"
+                  @error="handleImageError"
+                />
+                <div 
+                  v-else 
+                  class="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium"
+                >
+                  {{ userInitials }}
+                </div>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-neutral-900">{{ userName }}</p>
+                <p class="text-xs text-neutral-500">{{ user.email }}</p>
+              </div>
+            </div>
+            
             <NuxtLink to="/profile" class="block py-2 text-neutral-700">Profile</NuxtLink>
             <NuxtLink to="/donations" class="block py-2 text-neutral-700">My Donations</NuxtLink>
             <NuxtLink to="/messages" class="block py-2 text-neutral-700">Messages</NuxtLink>
@@ -78,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useSupabaseClient, useSupabaseUser } from '#imports';
 
 const user = useSupabaseUser();
@@ -86,6 +133,84 @@ const supabase = useSupabaseClient();
 const mobileMenuOpen = ref(false);
 const userMenuOpen = ref(false);
 const userMenuContainer = ref(null);
+const userProfile = ref(null);
+const imageError = ref(false);
+
+// Computed properties for user display
+const userName = computed(() => {
+  if (!user.value) return '';
+  
+  // Try to get name from various sources
+  const metadata = user.value.user_metadata || {};
+  const profile = userProfile.value || {};
+  
+  // Priority: profile first_name + last_name > metadata full_name > metadata name > email
+  if (profile.first_name && profile.last_name) {
+    return `${profile.first_name} ${profile.last_name}`;
+  } else if (profile.first_name) {
+    return profile.first_name;
+  } else if (metadata.full_name) {
+    return metadata.full_name;
+  } else if (metadata.name) {
+    return metadata.name;
+  } else {
+    return user.value.email?.split('@')[0] || 'User';
+  }
+});
+
+const userAvatar = computed(() => {
+  if (imageError.value) return null;
+  
+  if (!user.value) return null;
+  
+  const metadata = user.value.user_metadata || {};
+  const profile = userProfile.value || {};
+  
+  // Priority: profile avatar_url > metadata avatar_url > metadata picture
+  return profile.avatar_url || metadata.avatar_url || metadata.picture || null;
+});
+
+const userInitials = computed(() => {
+  if (!user.value) return 'U';
+  
+  const name = userName.value;
+  const words = name.split(' ').filter(word => word.length > 0);
+  
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  } else if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  } else {
+    return user.value.email?.[0]?.toUpperCase() || 'U';
+  }
+});
+
+// Handle image loading errors
+const handleImageError = () => {
+  imageError.value = true;
+};
+
+// Fetch user profile data
+const fetchUserProfile = async () => {
+  if (!user.value) return;
+  
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, avatar_url')
+      .eq('id', user.value.id)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error fetching profile:', error);
+      return;
+    }
+    
+    userProfile.value = data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+  }
+};
 
 const logout = async () => {
   try {
@@ -104,8 +229,21 @@ const handleClickOutside = (event) => {
   }
 };
 
+// Watch for user changes and fetch profile
+watch(user, (newUser) => {
+  if (newUser) {
+    fetchUserProfile();
+    imageError.value = false; // Reset image error state
+  } else {
+    userProfile.value = null;
+  }
+}, { immediate: true });
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  if (user.value) {
+    fetchUserProfile();
+  }
 });
 
 onUnmounted(() => {
