@@ -28,7 +28,9 @@ export default defineNuxtConfig({
     }
   },
   runtimeConfig: {
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     public: {
+      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY
     }
@@ -55,6 +57,9 @@ export default defineNuxtConfig({
         autoRefreshToken: true
       }
     }
+  },
+  build: {
+    transpile: ['@stripe/stripe-js']
   },
   colorMode: {
     preference: 'light',
