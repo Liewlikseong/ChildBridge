@@ -22,35 +22,36 @@ export default defineEventHandler(async (event) => {
       supabase = createClient(supabaseUrl, supabaseKey);
     }
 
-    // Map Stripe status to our database status
+    // Map Stripe status to our internal donation status
     const statusMapping = {
-      'succeeded': 'completed',
-      'requires_payment_method': 'pending',
-      'requires_action': 'pending',
-      'processing': 'pending',
-      'requires_confirmation': 'pending',
-      'canceled': 'failed',
-      'failed': 'failed'
+      succeeded: 'completed',
+      processing: 'processing',
+      requires_payment_method: 'pending',
+      requires_action: 'pending',
+      requires_confirmation: 'pending',
+      canceled: 'cancelled',
+      failed: 'failed'
     };
 
     const dbStatus = statusMapping[status] || 'pending';
 
-    // Update donation record
+    // Prepare update fields
     const updateData = {
       status: dbStatus,
       updated_at: new Date().toISOString()
     };
 
-    // Add completion timestamp if payment succeeded
+    // If Stripe status is 'succeeded', mark donation as completed
     if (status === 'succeeded') {
       updateData.completed_at = new Date().toISOString();
     }
 
-    // Add payment intent ID if provided
+    // If paymentIntentId is provided, store it
     if (paymentIntentId) {
       updateData.stripe_payment_intent_id = paymentIntentId;
     }
 
+    // Update the donation in the database
     const { data, error } = await supabase
       .from('donations')
       .update(updateData)
@@ -74,11 +75,11 @@ export default defineEventHandler(async (event) => {
 
   } catch (error) {
     console.error('Update status error:', error);
-    
+
     if (error.statusCode) {
       throw error;
     }
-    
+
     throw createError({
       statusCode: 500,
       statusMessage: `Update failed: ${error.message}`

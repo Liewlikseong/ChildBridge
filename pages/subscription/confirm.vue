@@ -4,8 +4,8 @@
     <section class="bg-primary-900 text-white py-16">
       <div class="container-custom">
         <div class="max-w-3xl mx-auto text-center">
-          <h1 class="text-4xl md:text-5xl font-bold mb-6">Complete Your Donation</h1>
-          <p class="text-xl text-primary-100">Your generous contribution makes a difference in children's lives.</p>
+          <h1 class="text-4xl md:text-5xl font-bold mb-6">Set Up Monthly Donation</h1>
+          <p class="text-xl text-primary-100">Join our monthly giving community and make a lasting impact on children's lives.</p>
         </div>
       </div>
     </section>
@@ -16,36 +16,37 @@
         <div class="max-w-4xl mx-auto">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <!-- Donation Summary -->
+            <!-- Subscription Summary -->
             <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-bold mb-6">Donation Summary</h2>
+              <h2 class="text-2xl font-bold mb-6">Monthly Donation Summary</h2>
               
-              <!-- Donation Details -->
+              <!-- Subscription Details -->
               <div class="border-b border-gray-200 pb-4 mb-4">
-                <h3 class="text-lg font-semibold mb-2">{{ donationDetails.category || 'General Fund' }}</h3>
-                <p class="text-gray-600 mb-2">Type: {{ donationDetails.type === 'onetime' ? 'One-time Donation' : 'Monthly Donation' }}</p>
-                <p class="text-gray-600">Date: {{ new Date().toLocaleDateString() }}</p>
+                <h3 class="text-lg font-semibold mb-2">{{ subscriptionDetails.category || 'General Fund' }}</h3>
+                <p class="text-gray-600 mb-2">Type: Monthly Recurring Donation</p>
+                <p class="text-gray-600 mb-2">Start Date: {{ new Date().toLocaleDateString() }}</p>
+                <p class="text-gray-600">Next Payment: {{ getNextPaymentDate() }}</p>
               </div>
 
               <!-- Amount Section -->
               <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Donation Amount
+                  Monthly Donation Amount
                 </label>
                 <div class="relative">
                   <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">RM</span>
                   <input
-                    v-model="customAmount"
+                    v-model="monthlyAmount"
                     type="number"
-                    min="10"
+                    min="25"
                     step="0.01"
                     :disabled="!!fixedAmount"
                     class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
-                    :placeholder="fixedAmount ? fixedAmount : 'Enter amount (Min: RM 10)'"
+                    :placeholder="fixedAmount ? fixedAmount : 'Enter monthly amount (Min: RM 25)'"
                   />
                 </div>
                 <p class="text-sm text-gray-500 mt-1">
-                  Any amount is appreciated (Minimum: RM 10.00)
+                  Minimum monthly donation: RM 25.00
                 </p>
               </div>
 
@@ -58,24 +59,48 @@
                   v-model="donationMessage"
                   rows="3"
                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Leave a message with your donation..."
+                  placeholder="Leave a message with your monthly donation..."
                 ></textarea>
               </div>
 
-              <!-- Impact Statement -->
+              <!-- Monthly Impact Statement -->
               <div class="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
-                <h4 class="font-semibold text-primary-800 mb-2">Your Impact</h4>
+                <h4 class="font-semibold text-primary-800 mb-2">Your Monthly Impact</h4>
                 <p class="text-sm text-primary-700">
-                  {{ getImpactMessage() }}
+                  {{ getMonthlyImpactMessage() }}
                 </p>
+              </div>
+
+              <!-- Annual Impact -->
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-green-800 mb-2">Annual Impact</h4>
+                <p class="text-sm text-green-700">
+                  Your total annual contribution: <strong>RM{{ (parseFloat(finalAmount) * 12).toFixed(2) }}</strong>
+                </p>
+                <p class="text-xs text-green-600 mt-1">
+                  {{ getAnnualImpactMessage() }}
+                </p>
+              </div>
+
+              <!-- Subscription Management -->
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-blue-800 mb-2">Easy Management</h4>
+                <div class="text-sm text-blue-700">
+                  <p class="mb-2">✓ Cancel or modify anytime from your dashboard</p>
+                  <p class="mb-2">✓ Email receipts for tax purposes</p>
+                  <p>✓ Regular updates on your impact</p>
+                </div>
               </div>
 
               <!-- Total -->
               <div class="border-t border-gray-200 pt-4">
                 <div class="flex justify-between items-center text-xl font-bold">
-                  <span>Total{{ donationDetails.type === 'subscription' ? '/month' : '' }}:</span>
+                  <span>Monthly Charge:</span>
                   <span class="text-primary-600">RM{{ finalAmount }}</span>
                 </div>
+                <p class="text-sm text-gray-500 mt-1">
+                  First payment today, then on the {{ new Date().getDate() }}{{ getOrdinalSuffix(new Date().getDate()) }} of each month
+                </p>
               </div>
             </div>
 
@@ -83,8 +108,24 @@
             <div class="bg-white rounded-lg shadow-md p-6">
               <h2 class="text-2xl font-bold mb-6">Payment Information</h2>
               
+              <!-- Authentication Notice -->
+              <div v-if="!user" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                  <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                  <div class="text-sm text-yellow-800">
+                    <p class="font-medium mb-1">Account Required</p>
+                    <p>You need to be logged in to set up monthly donations. This helps us manage your subscription and send you updates.</p>
+                    <button @click="redirectToLogin" class="mt-2 text-primary-600 hover:text-primary-700 underline font-medium">
+                      Sign In or Create Account
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <!-- Donor Information -->
-              <div class="mb-6">
+              <div class="mb-6" :class="{ 'opacity-50 pointer-events-none': !user }">
                 <h3 class="text-lg font-semibold mb-4">Contact Information</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -126,8 +167,8 @@
                 </div>
               </div>
 
-              <!-- Stripe Card Element -->
-              <div class="mb-6">
+              <!-- Payment Method -->
+              <div class="mb-6" :class="{ 'opacity-50 pointer-events-none': !user }">
                 <h3 class="text-lg font-semibold mb-4">Payment Method</h3>
                 <div class="border border-gray-300 rounded-lg p-4">
                   <div id="card-element" class="min-h-[40px]">
@@ -135,10 +176,13 @@
                   </div>
                   <div id="card-errors" role="alert" class="text-red-600 text-sm mt-2"></div>
                 </div>
+                <p class="text-xs text-gray-500 mt-2">
+                  Your payment method will be securely saved for future monthly charges
+                </p>
               </div>
 
-              <!-- Terms and Conditions -->
-              <div class="mb-6">
+              <!-- Subscription Terms -->
+              <div class="mb-6" :class="{ 'opacity-50 pointer-events-none': !user }">
                 <label class="flex items-start">
                   <input
                     v-model="agreedToTerms"
@@ -146,17 +190,18 @@
                     class="mt-1 mr-3 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
                   <span class="text-sm text-gray-700">
-                    I agree to the 
+                    I agree to the monthly subscription terms, 
                     <a href="#" class="text-primary-600 hover:text-primary-700 underline">Terms and Conditions</a>
                     and 
-                    <a href="#" class="text-primary-600 hover:text-primary-700 underline">Privacy Policy</a>
+                    <a href="#" class="text-primary-600 hover:text-primary-700 underline">Privacy Policy</a>.
+                    I understand I can cancel or modify my subscription at any time.
                   </span>
                 </label>
               </div>
 
               <!-- Submit Button -->
               <button
-                @click="processDonation"
+                @click="processSubscription"
                 :disabled="!canSubmit || processing"
                 :class="[
                   'w-full py-4 px-6 rounded-lg font-semibold text-lg transition-colors',
@@ -170,10 +215,10 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Processing...
+                  Setting up subscription...
                 </span>
                 <span v-else>
-                  Complete Donation (RM{{ finalAmount }}{{ donationDetails.type === 'subscription' ? '/month' : '' }})
+                  Start Monthly Donation (RM{{ finalAmount }}/month)
                 </span>
               </button>
 
@@ -199,24 +244,27 @@
             </svg>
           </div>
           <h3 class="text-2xl font-bold text-gray-900 mb-2">
-            {{ donationDetails.type === 'subscription' ? 'Monthly Donation Set Up!' : 'Donation Successful!' }}
+            Monthly Donation Active!
           </h3>
           <p class="text-gray-600 mb-6">
-            {{ donationDetails.type === 'subscription' 
-              ? `Thank you for setting up a monthly donation of RM${finalAmount}. Your first payment has been processed and future payments will be automatically charged monthly.`
-              : `Thank you for your generous donation of RM${finalAmount}. Your contribution makes a real difference in children's lives!`
-            }}
+            Thank you for setting up a monthly donation of RM{{ finalAmount }}. Your first payment has been processed and future payments will be automatically charged on the {{ new Date().getDate() }}{{ getOrdinalSuffix(new Date().getDate()) }} of each month.
           </p>
           <div class="space-y-3">
             <button
-              @click="goToDonations"
+              @click="goToDashboard"
               class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
             >
-              Back to Donations
+              Manage Subscription
+            </button>
+            <button
+              @click="goToDonations"
+              class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors"
+            >
+              View All Donations
             </button>
             <button
               @click="closeModal"
-              class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors"
+              class="w-full text-gray-500 hover:text-gray-700 py-2 font-medium transition-colors"
             >
               Close
             </button>
@@ -244,15 +292,14 @@ let elements = null;
 let cardElement = null;
 
 // Page data from route params
-const donationDetails = ref({
+const subscriptionDetails = ref({
   amount: parseFloat(route.query.amount) || 0,
-  type: route.query.type || 'onetime', // 'onetime' or 'subscription'
   category: route.query.category || 'general',
   event_id: route.query.event_id || null
 });
 
-const fixedAmount = ref(donationDetails.value.amount > 0 ? donationDetails.value.amount.toString() : '');
-const customAmount = ref(fixedAmount.value || '');
+const fixedAmount = ref(subscriptionDetails.value.amount > 0 ? subscriptionDetails.value.amount.toString() : '');
+const monthlyAmount = ref(fixedAmount.value || '');
 const donationMessage = ref('');
 const agreedToTerms = ref(false);
 const processing = ref(false);
@@ -267,12 +314,13 @@ const paymentForm = ref({
 
 // Computed properties
 const finalAmount = computed(() => {
-  const amount = parseFloat(customAmount.value) || 0;
+  const amount = parseFloat(monthlyAmount.value) || 0;
   return amount.toFixed(2);
 });
 
 const canSubmit = computed(() => {
-  return parseFloat(finalAmount.value) >= 10 && 
+  return user.value &&
+         parseFloat(finalAmount.value) >= 25 && 
          paymentForm.value.firstName.trim() && 
          paymentForm.value.lastName.trim() && 
          paymentForm.value.email.trim() && 
@@ -282,19 +330,59 @@ const canSubmit = computed(() => {
 });
 
 // Helper functions
-const getImpactMessage = () => {
+const getNextPaymentDate = () => {
+  const today = new Date();
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  return nextMonth.toLocaleDateString();
+};
+
+const getOrdinalSuffix = (day) => {
+  if (day > 3 && day < 21) return 'th';
+  switch (day % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
+};
+
+const getMonthlyImpactMessage = () => {
   const amount = parseFloat(finalAmount.value) || 0;
   
-  if (amount >= 400) {
-    return 'Your donation can cover healthcare check-ups for multiple children and provide educational supplies for several months.';
-  } else if (amount >= 200) {
-    return 'Your donation can fund meals for a child for two weeks and provide essential school supplies.';
+  if (amount >= 200) {
+    return 'Your monthly donation can provide complete healthcare coverage and educational support for a child each month.';
   } else if (amount >= 100) {
-    return 'Your donation can provide educational supplies for one child for a month.';
+    return 'Your monthly donation can cover educational supplies and nutritious meals for a child throughout the month.';
   } else if (amount >= 50) {
-    return 'Your donation can help provide nutritious meals and basic supplies for children in need.';
+    return 'Your monthly donation can provide essential school supplies and regular meals for children in need.';
+  } else if (amount >= 25) {
+    return 'Your monthly donation helps provide basic necessities and support for children in our programs.';
   }
-  return 'Every donation, no matter the size, makes a meaningful difference in a child\'s life.';
+  return 'Every monthly contribution creates lasting change in children\'s lives.';
+};
+
+const getAnnualImpactMessage = () => {
+  const annualAmount = parseFloat(finalAmount.value) * 12;
+  
+  if (annualAmount >= 2400) {
+    return 'Could support a child\'s complete education and healthcare for an entire year.';
+  } else if (annualAmount >= 1200) {
+    return 'Could provide comprehensive support for multiple children throughout the year.';
+  } else if (annualAmount >= 600) {
+    return 'Could cover educational materials and regular meals for several children annually.';
+  }
+  return 'Makes a significant cumulative impact on children\'s welfare throughout the year.';
+};
+
+const redirectToLogin = () => {
+  // Store current subscription details to return after login
+  const returnUrl = `/subscription-payment?${new URLSearchParams({
+    amount: subscriptionDetails.value.amount || '',
+    category: subscriptionDetails.value.category,
+    event_id: subscriptionDetails.value.event_id || ''
+  }).toString()}`;
+  
+  navigateTo(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
 };
 
 // Initialize Stripe
@@ -349,99 +437,93 @@ const setupStripe = () => {
   }
 };
 
-// Process donation
-const processDonation = async () => {
+// Process subscription
+const processSubscription = async () => {
   if (!canSubmit.value || !stripe || !cardElement) return;
 
   const amount = parseFloat(finalAmount.value);
-  if (amount < 10) {
-    alert('Minimum donation amount is RM 10.00');
+  if (amount < 25) {
+    alert('Minimum monthly donation amount is RM 25.00');
+    return;
+  }
+
+  if (!user.value) {
+    alert('Please sign in to set up a monthly donation.');
+    redirectToLogin();
     return;
   }
 
   processing.value = true;
 
   try {
-    console.log('🔍 Processing donation...');
+    console.log('🔍 Processing subscription...');
     
-    const donationData = {
+    // Create payment method first
+    const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: {
+        name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
+        email: paymentForm.value.email,
+      },
+    });
+
+    if (pmError) {
+      throw new Error(pmError.message);
+    }
+
+    console.log('✅ Payment method created:', paymentMethod.id);
+
+    // Create subscription
+    const subscriptionData = {
       amount: amount,
       currency: 'myr',
-      type: donationDetails.value.type,
-      category: donationDetails.value.category,
+      category: subscriptionDetails.value.category,
       message: donationMessage.value || null,
-      event_id: donationDetails.value.event_id
+      event_id: subscriptionDetails.value.event_id,
+      payment_method: paymentMethod
     };
 
-    let response;
+    const response = await $fetch('/api/stripe/create-subscription', {
+      method: 'POST',
+      body: subscriptionData
+    });
 
-    if (donationDetails.value.type === 'onetime') {
-      // One-time donation
-      response = await $fetch('/api/stripe/create-payment-intent', {
-        method: 'POST',
-        body: donationData
-      });
+    console.log('🔍 Subscription response:', response);
 
-      if (!response.client_secret) {
-        throw new Error('Failed to create payment intent');
+    // Handle additional authentication if required (3D Secure, etc.)
+    if (response.requires_action && response.client_secret) {
+      console.log('🔍 Confirming payment with additional authentication...');
+      
+      const { error: confirmError } = await stripe.confirmCardPayment(response.client_secret);
+      
+      if (confirmError) {
+        throw new Error(confirmError.message);
       }
+      
+      console.log('✅ Payment confirmed with additional authentication');
+    }
 
-      const { error, paymentIntent } = await stripe.confirmCardPayment(response.client_secret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
-            email: paymentForm.value.email,
-          },
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (paymentIntent.status === 'succeeded') {
-        showSuccessModal.value = true;
-      } else {
-        throw new Error(`Payment not completed. Status: ${paymentIntent.status}`);
-      }
-
-    } else {
-      // Subscription donation
-      response = await $fetch('/api/stripe/create-subscription', {
-        method: 'POST',
-        body: {
-          ...donationData,
-          payment_method: await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-            billing_details: {
-              name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
-              email: paymentForm.value.email,
-            },
-          })
-        }
-      });
-
-      if (response.requires_action) {
-        const { error } = await stripe.confirmCardPayment(response.client_secret);
-        if (error) {
-          throw new Error(error.message);
-        }
-      }
-
+    // Check final status
+    if (response.status === 'active' || response.status === 'trialing') {
+      console.log('✅ Subscription successfully created and active');
       showSuccessModal.value = true;
+    } else if (response.status === 'incomplete') {
+      throw new Error('Subscription setup incomplete. Please try again or contact support.');
+    } else {
+      console.log('⚠️ Subscription created but status:', response.status);
+      showSuccessModal.value = true; // Still show success as subscription is created
     }
 
   } catch (error) {
-    console.error('❌ Donation error:', error);
+    console.error('❌ Subscription error:', error);
     
     let errorMessage = error.message;
     if (error.name === 'FetchError') {
       errorMessage = 'Network error. Please check your connection and try again.';
     }
     
-    alert(`Donation failed: ${errorMessage}`);
+    alert(`Subscription setup failed: ${errorMessage}`);
   } finally {
     processing.value = false;
   }
@@ -450,6 +532,11 @@ const processDonation = async () => {
 // Modal actions
 const closeModal = () => {
   showSuccessModal.value = false;
+};
+
+const goToDashboard = () => {
+  showSuccessModal.value = false;
+  navigateTo('/dashboard/subscriptions');
 };
 
 const goToDonations = () => {
