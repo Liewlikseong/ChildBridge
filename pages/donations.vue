@@ -126,18 +126,12 @@
                 </span>
               </div>
               <h3 class="text-lg font-medium text-gray-900">{{ subscription.amount }} / {{ subscription.interval_type }}</h3>
-              <p class="text-sm text-gray-600 capitalize">{{ subscription.category }} Fund</p>
+              <p class="text-sm text-gray-600 capitalize">{{ subscription.category }}</p>
               <p class="text-sm text-gray-500 mt-1">
                 Next payment: {{ formatDate(subscription.current_period_end) }}
               </p>
             </div>
             <div class="flex space-x-2">
-              <button 
-                @click="manageSubscription(subscription)"
-                class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50"
-              >
-                Manage
-              </button>
               <button 
                 @click="cancelSubscription(subscription.id)"
                 class="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded hover:bg-red-50"
@@ -516,10 +510,6 @@ const downloadReceipt = async (donation) => {
   }
 }
 
-const manageSubscription = (subscription) => {
-  // Navigate to subscription management page
-  navigateTo(`/dashboard/subscriptions/${subscription.id}`)
-}
 
 const cancelSubscription = async (subscriptionId) => {
   if (!confirm('Are you sure you want to cancel this subscription?')) {

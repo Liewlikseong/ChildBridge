@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { amount, currency = 'myr', category, message, event_id } = body;
+    const { amount, currency = 'myr', category, message, event_id, payment_method } = body;
 
     console.log('=== SUBSCRIPTION API ROUTE DEBUG START ===');
     console.log('Request body:', body);
@@ -16,7 +16,14 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Initialize Supabase client (same logic as payment intent)
+    if (!payment_method || !payment_method.id) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Payment method is required for subscriptions'
+      });
+    }
+
+    // Initialize Supabase client
     let supabase;
     try {
       console.log('Trying serverSupabaseClient...');
@@ -58,7 +65,7 @@ export default defineEventHandler(async (event) => {
     const stripe = new Stripe(stripeSecretKey);
     console.log('✅ Stripe initialized');
 
-    // Get user (same logic as payment intent)
+    // Get user
     let user = null;
     try {
       const { serverSupabaseUser } = await import('#supabase/server');
@@ -94,6 +101,21 @@ export default defineEventHandler(async (event) => {
       console.log('✅ Created new Stripe customer:', customer.id);
     }
 
+    // Attach payment method to customer
+    console.log('🔍 Attaching payment method to customer...');
+    await stripe.paymentMethods.attach(payment_method.id, {
+      customer: customer.id,
+    });
+    console.log('✅ Payment method attached');
+
+    // Set as default payment method
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: payment_method.id,
+      },
+    });
+    console.log('✅ Default payment method set');
+
     // Create price for the subscription
     const price = await stripe.prices.create({
       unit_amount: Math.round(amount * 100), // Convert to cents
@@ -105,12 +127,11 @@ export default defineEventHandler(async (event) => {
     });
     console.log('✅ Created Stripe price:', price.id);
 
-    // Create subscription
+    // Create subscription with attached payment method
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: price.id }],
-      payment_behavior: 'default_incomplete',
-      payment_settings: { save_default_payment_method: 'on_subscription' },
+      default_payment_method: payment_method.id,
       expand: ['latest_invoice.payment_intent'],
       metadata: {
         donor_id: user.id,
@@ -119,46 +140,8 @@ export default defineEventHandler(async (event) => {
       }
     });
     console.log('✅ Created Stripe subscription:', subscription.id);
-    console.log('Subscription object:', {
-      id: subscription.id,
-      status: subscription.status,
-      current_period_start: subscription.current_period_start,
-      current_period_end: subscription.current_period_end,
-      latest_invoice: subscription.latest_invoice?.id,
-      payment_intent: subscription.latest_invoice?.payment_intent?.id
-    });
+    console.log('Subscription status:', subscription.status);
 
-    // Get the client secret safely
-    let clientSecret = null;
-    if (subscription.latest_invoice?.payment_intent?.client_secret) {
-      clientSecret = subscription.latest_invoice.payment_intent.client_secret;
-      console.log('✅ Got client secret from subscription');
-    } else {
-      console.log('⚠️ No client secret in subscription, fetching invoice...');
-      
-      // If no client secret, try to get the invoice directly
-      if (subscription.latest_invoice?.id) {
-        try {
-          const invoice = await stripe.invoices.retrieve(subscription.latest_invoice.id, {
-            expand: ['payment_intent']
-          });
-          
-          if (invoice.payment_intent?.client_secret) {
-            clientSecret = invoice.payment_intent.client_secret;
-            console.log('✅ Got client secret from invoice');
-          }
-        } catch (invoiceError) {
-          console.error('Failed to retrieve invoice:', invoiceError);
-        }
-      }
-      
-      // If still no client secret, the subscription might not need immediate payment
-      if (!clientSecret) {
-        console.log('⚠️ No payment intent found - subscription might be in trial or different state');
-      }
-    }
-
-    // Create subscription record in database
     // Handle date conversion safely
     let periodStart = null;
     let periodEnd = null;
@@ -173,12 +156,9 @@ export default defineEventHandler(async (event) => {
       console.log('Period dates:', { periodStart, periodEnd });
     } catch (dateError) {
       console.error('Date conversion error:', dateError);
-      console.log('Raw period values:', {
-        start: subscription.current_period_start,
-        end: subscription.current_period_end
-      });
     }
 
+    // Create subscription record in database
     const subscriptionRecord = {
       donor_id: user.id,
       event_id: event_id || null,
@@ -221,33 +201,79 @@ export default defineEventHandler(async (event) => {
       currency: currency.toLowerCase(),
       category: category || 'general',
       type: 'subscription',
-      status: 'pending',
-      message: message || null
+      status: subscription.status === 'active' ? 'completed' : 'pending',
+      message: message || null,
+      stripe_payment_intent_id: subscription.latest_invoice?.payment_intent?.id || null
     };
 
     console.log('Inserting donation record:', donationRecord);
 
-    const { error: donationError } = await supabase
+    const { data: createdDonation, error: donationError } = await supabase
       .from('donations')
-      .insert(donationRecord);
+      .insert(donationRecord)
+      .select()
+      .single();
 
     if (donationError) {
       console.error('❌ Donation database insert error:', donationError);
       // Don't fail the whole process for this, just log it
       console.log('⚠️ Continuing despite donation record error');
     } else {
-      console.log('✅ Initial donation record created');
+      console.log('✅ Initial donation record created:', createdDonation.id);
+    }
+
+    // Create subscription payment record for the first payment
+    if (subscription.latest_invoice && subscription.status === 'active') {
+      const invoice = subscription.latest_invoice;
+      const paymentRecord = {
+        subscription_id: createdSubscription.id,
+        donation_id: createdDonation?.id || null,
+        stripe_invoice_id: invoice.id,
+        stripe_payment_intent_id: invoice.payment_intent?.id || null,
+        amount: parseFloat(amount),
+        currency: currency.toLowerCase(),
+        status: invoice.payment_intent?.status === 'succeeded' ? 'paid' : 'pending',
+        billing_period_start: periodStart,
+        billing_period_end: periodEnd
+      };
+
+      console.log('Inserting subscription payment record:', paymentRecord);
+
+      const { error: paymentError } = await supabase
+        .from('subscription_payments')
+        .insert(paymentRecord);
+
+      if (paymentError) {
+        console.error('❌ Subscription payment record error:', paymentError);
+        // Don't fail the whole process for this, just log it
+        console.log('⚠️ Continuing despite payment record error');
+      } else {
+        console.log('✅ Subscription payment record created');
+      }
+    }
+
+    // Determine if additional action is required
+    let requiresAction = false;
+    let clientSecret = null;
+
+    if (subscription.latest_invoice?.payment_intent) {
+      const paymentIntent = subscription.latest_invoice.payment_intent;
+      if (paymentIntent.status === 'requires_action') {
+        requiresAction = true;
+        clientSecret = paymentIntent.client_secret;
+        console.log('⚠️ Payment requires additional action (3D Secure, etc.)');
+      }
     }
 
     console.log('=== SUBSCRIPTION API ROUTE DEBUG END ===');
 
     return {
       subscription_id: subscription.id,
-      client_secret: clientSecret,
       customer_id: customer.id,
       status: subscription.status,
-      requires_payment: !!clientSecret,
-      subscription_status: subscription.status
+      requires_action: requiresAction,
+      client_secret: clientSecret,
+      payment_method_id: payment_method.id
     };
 
   } catch (error) {
