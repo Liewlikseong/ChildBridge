@@ -26,6 +26,7 @@
           <NuxtLink to="/about" class="navbar-link">About</NuxtLink>
           <NuxtLink to="/donate" class="navbar-link">Donate</NuxtLink>
           <NuxtLink to="/updates" class="navbar-link">Updates</NuxtLink>
+          <NuxtLink to="/events" class="navbar-link">Events</NuxtLink>
           <template v-if="!user">
             <NuxtLink to="/auth/login" class="btn btn-outline ml-4">Login</NuxtLink>
             <NuxtLink to="/auth/register" class="btn btn-primary ml-2">Sign Up</NuxtLink>
@@ -84,6 +85,7 @@
         <NuxtLink to="/about" class="block py-2 text-neutral-700">About</NuxtLink>
         <NuxtLink to="/donate" class="block py-2 text-neutral-700">Donate</NuxtLink>
         <NuxtLink to="/updates" class="block py-2 text-neutral-700">Updates</NuxtLink>
+        <NuxtLink to="/events" class="block py-2 text-neutral-700">Events</NuxtLink>
         <template v-if="!user">
           <NuxtLink to="/auth/login" class="block py-2 text-neutral-700">Login</NuxtLink>
           <NuxtLink to="/auth/register" class="block py-2 text-primary-600 font-medium">Sign Up</NuxtLink>

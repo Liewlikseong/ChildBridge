@@ -132,7 +132,6 @@
             <option value="">Select occupation</option>
             <option value="student">Student</option>
             <option value="unemployed">Unemployed</option>
-            <option value="homeless">Homeless</option>
             <option value="employed">Employed</option>
             <option value="self-employed">Self-Employed</option>
             <option value="retired">Retired</option>

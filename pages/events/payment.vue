@@ -4,8 +4,8 @@
     <section class="bg-primary-900 text-white py-16">
       <div class="container-custom">
         <div class="max-w-3xl mx-auto text-center">
-          <h1 class="text-4xl md:text-5xl font-bold mb-6">Complete Your Donation</h1>
-          <p class="text-xl text-primary-100">Your generous contribution makes a difference in children's lives.</p>
+          <h1 class="text-4xl md:text-5xl font-bold mb-6">Payment</h1>
+          <p class="text-xl text-primary-100">Complete your {{ paymentType }} securely.</p>
         </div>
       </div>
     </section>
@@ -16,41 +16,41 @@
         <div class="max-w-4xl mx-auto">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <!-- Donation Summary -->
+            <!-- Payment Summary -->
             <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-bold mb-6">Donation Summary</h2>
+              <h2 class="text-2xl font-bold mb-6">Payment Summary</h2>
               
-              <!-- Donation Details -->
+              <!-- Event Details -->
               <div class="border-b border-gray-200 pb-4 mb-4">
-                <h3 class="text-lg font-semibold mb-2">{{ donationDetails.category || 'General Fund' }}</h3>
-                <p class="text-gray-600 mb-2">Type: {{ donationDetails.type === 'onetime' ? 'One-time Donation' : 'Monthly Donation' }}</p>
+                <h3 class="text-lg font-semibold mb-2">{{ eventTitle }}</h3>
+                <p class="text-gray-600 mb-2">Type: {{ capitalizeFirst(paymentType) }}</p>
                 <p class="text-gray-600">Date: {{ new Date().toLocaleDateString() }}</p>
               </div>
 
               <!-- Amount Section -->
               <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Donation Amount
+                  {{ paymentType === 'donation' ? 'Donation Amount' : 'Purchase Amount' }}
                 </label>
                 <div class="relative">
                   <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">RM</span>
                   <input
                     v-model="customAmount"
                     type="number"
-                    min="10"
+                    min="1"
                     step="0.01"
                     :disabled="!!fixedAmount"
                     class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
-                    :placeholder="fixedAmount ? fixedAmount : 'Enter amount (Min: RM 10)'"
+                    :placeholder="fixedAmount ? fixedAmount : 'Enter amount'"
                   />
                 </div>
-                <p class="text-sm text-gray-500 mt-1">
-                  Any amount is appreciated (Minimum: RM 10.00)
+                <p v-if="paymentType === 'donation'" class="text-sm text-gray-500 mt-1">
+                  Any amount is appreciated
                 </p>
               </div>
 
-              <!-- Donation Message -->
-              <div class="mb-6">
+              <!-- Donation Message (for donations only) -->
+              <div v-if="paymentType === 'donation'" class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   Personal Message (Optional)
                 </label>
@@ -62,18 +62,10 @@
                 ></textarea>
               </div>
 
-              <!-- Impact Statement -->
-              <div class="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
-                <h4 class="font-semibold text-primary-800 mb-2">Your Impact</h4>
-                <p class="text-sm text-primary-700">
-                  {{ getImpactMessage() }}
-                </p>
-              </div>
-
               <!-- Total -->
               <div class="border-t border-gray-200 pt-4">
                 <div class="flex justify-between items-center text-xl font-bold">
-                  <span>Total{{ donationDetails.type === 'subscription' ? '/month' : '' }}:</span>
+                  <span>Total:</span>
                   <span class="text-primary-600">RM{{ finalAmount }}</span>
                 </div>
               </div>
@@ -156,7 +148,7 @@
 
               <!-- Submit Button -->
               <button
-                @click="processDonation"
+                @click="processPayment"
                 :disabled="!canSubmit || processing"
                 :class="[
                   'w-full py-4 px-6 rounded-lg font-semibold text-lg transition-colors',
@@ -173,7 +165,7 @@
                   Processing...
                 </span>
                 <span v-else>
-                  Complete Donation (RM{{ finalAmount }}{{ donationDetails.type === 'subscription' ? '/month' : '' }})
+                  Complete {{ paymentType === 'donation' ? 'Donation' : 'Purchase' }} (RM{{ finalAmount }})
                 </span>
               </button>
 
@@ -199,20 +191,18 @@
             </svg>
           </div>
           <h3 class="text-2xl font-bold text-gray-900 mb-2">
-            {{ donationDetails.type === 'subscription' ? 'Monthly Donation Set Up!' : 'Donation Successful!' }}
+            {{ paymentType === 'donation' ? 'Donation' : 'Purchase' }} Successful!
           </h3>
           <p class="text-gray-600 mb-6">
-            {{ donationDetails.type === 'subscription' 
-              ? `Thank you for setting up a monthly donation of RM${finalAmount}. Your first payment has been processed and future payments will be automatically charged monthly.`
-              : `Thank you for your generous donation of RM${finalAmount}. Your contribution makes a real difference in children's lives!`
-            }}
+            Thank you for your {{ paymentType === 'donation' ? 'generous donation' : 'purchase' }} of RM{{ finalAmount }}.
+            {{ paymentType === 'donation' ? 'Your contribution makes a difference!' : 'Your order has been confirmed.' }}
           </p>
           <div class="space-y-3">
             <button
-              @click="goToDonations"
+              @click="goToEvents"
               class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
             >
-              Back to Donations
+              Back to Events
             </button>
             <button
               @click="closeModal"
@@ -237,21 +227,20 @@ const router = useRouter();
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
 
-// Stripe configuration
+// Stripe configuration - USE YOUR ACTUAL PUBLISHABLE KEY
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51RVvV5R9hGUCBGvpabSsViVwSDDh3g902bSZruZee6dvLPLehVnCPBYmwdMTTfLsH391IP6oo8Iy9GkNAIKyuMd900gEHBJO57';
 let stripe = null;
 let elements = null;
 let cardElement = null;
 
-// Page data from route params
-const donationDetails = ref({
-  amount: parseFloat(route.query.amount) || 0,
-  type: route.query.type || 'onetime', // 'onetime' or 'subscription'
-  category: route.query.category || 'general',
-  event_id: route.query.event_id || null
-});
+// Page data
+const eventId = ref(route.query.eventId || '');
+const eventTitle = ref(route.query.eventTitle || 'Event');
+const paymentType = ref(route.query.type || 'donation');
+const fixedAmount = ref(route.query.amount || '');
+const currency = ref('myr');
 
-const fixedAmount = ref(donationDetails.value.amount > 0 ? donationDetails.value.amount.toString() : '');
+// Form data
 const customAmount = ref(fixedAmount.value || '');
 const donationMessage = ref('');
 const agreedToTerms = ref(false);
@@ -272,7 +261,7 @@ const finalAmount = computed(() => {
 });
 
 const canSubmit = computed(() => {
-  return parseFloat(finalAmount.value) >= 10 && 
+  return finalAmount.value > 0 && 
          paymentForm.value.firstName.trim() && 
          paymentForm.value.lastName.trim() && 
          paymentForm.value.email.trim() && 
@@ -281,20 +270,9 @@ const canSubmit = computed(() => {
          cardElement;
 });
 
-// Helper functions
-const getImpactMessage = () => {
-  const amount = parseFloat(finalAmount.value) || 0;
-  
-  if (amount >= 400) {
-    return 'Your donation can cover healthcare check-ups for multiple children and provide educational supplies for several months.';
-  } else if (amount >= 200) {
-    return 'Your donation can fund meals for a child for two weeks and provide essential school supplies.';
-  } else if (amount >= 100) {
-    return 'Your donation can provide educational supplies for one child for a month.';
-  } else if (amount >= 50) {
-    return 'Your donation can help provide nutritious meals and basic supplies for children in need.';
-  }
-  return 'Every donation, no matter the size, makes a meaningful difference in a child\'s life.';
+// Helper function
+const capitalizeFirst = (str) => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 // Initialize Stripe
@@ -349,99 +327,74 @@ const setupStripe = () => {
   }
 };
 
-// Process donation
-const processDonation = async () => {
+// FIXED: Process payment function
+const processPayment = async () => {
   if (!canSubmit.value || !stripe || !cardElement) return;
-
-  const amount = parseFloat(finalAmount.value);
-  if (amount < 10) {
-    alert('Minimum donation amount is RM 10.00');
-    return;
-  }
 
   processing.value = true;
 
   try {
-    console.log('🔍 Processing donation...');
+    console.log('🔍 Creating payment intent...');
     
-    const donationData = {
-      amount: amount,
-      currency: 'myr',
-      type: donationDetails.value.type,
-      category: donationDetails.value.category,
-      message: donationMessage.value || null,
-      event_id: donationDetails.value.event_id
-    };
-
-    let response;
-
-    if (donationDetails.value.type === 'onetime') {
-      // One-time donation
-      response = await $fetch('/api/stripe/create-payment-intent', {
-        method: 'POST',
-        body: donationData
-      });
-
-      if (!response.client_secret) {
-        throw new Error('Failed to create payment intent');
+    // FIXED: Correct API endpoint and request body structure
+    const response = await $fetch('/api/stripe/create-payment-intent', {
+      method: 'POST',
+      body: {
+        amount: finalAmount.value,  // This matches your API expectation
+        currency: currency.value,   // 'myr'
+        category: paymentType.value, // 'donation' etc.
+        message: donationMessage.value || null,
+        event_id: eventId.value || null // This matches your API expectation
       }
+    });
 
-      const { error, paymentIntent } = await stripe.confirmCardPayment(response.client_secret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
-            email: paymentForm.value.email,
-          },
-        }
-      });
+    console.log('🎯 API Response:', response);
+    console.log('🔑 Client secret present:', !!response.client_secret);
 
-      if (error) {
-        throw new Error(error.message);
+    // FIXED: Check for client_secret (underscore, not camelCase)
+    if (!response.client_secret) {
+      console.error('❌ No client_secret in response!');
+      console.log('Response keys:', Object.keys(response));
+      throw new Error('Failed to create payment intent - no client_secret returned');
+    }
+
+    console.log('💳 Confirming payment...');
+    
+    // FIXED: Use client_secret with underscore
+    const { error, paymentIntent } = await stripe.confirmCardPayment(response.client_secret, {
+      payment_method: {
+        card: cardElement,
+        billing_details: {
+          name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
+          email: paymentForm.value.email,
+        },
       }
+    });
 
-      if (paymentIntent.status === 'succeeded') {
-        showSuccessModal.value = true;
-      } else {
-        throw new Error(`Payment not completed. Status: ${paymentIntent.status}`);
-      }
+    if (error) {
+      console.error('❌ Payment confirmation failed:', error);
+      throw new Error(error.message);
+    }
 
-    } else {
-      // Subscription donation
-      response = await $fetch('/api/stripe/create-subscription', {
-        method: 'POST',
-        body: {
-          ...donationData,
-          payment_method: await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-            billing_details: {
-              name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
-              email: paymentForm.value.email,
-            },
-          })
-        }
-      });
+    console.log('✅ Payment confirmed:', paymentIntent);
 
-      if (response.requires_action) {
-        const { error } = await stripe.confirmCardPayment(response.client_secret);
-        if (error) {
-          throw new Error(error.message);
-        }
-      }
-
+    if (paymentIntent.status === 'succeeded') {
+      console.log('🎉 Payment succeeded!');
       showSuccessModal.value = true;
+    } else {
+      throw new Error(`Payment not completed. Status: ${paymentIntent.status}`);
     }
 
   } catch (error) {
-    console.error('❌ Donation error:', error);
+    console.error('❌ Payment error:', error);
     
+    // Better error messages
     let errorMessage = error.message;
     if (error.name === 'FetchError') {
       errorMessage = 'Network error. Please check your connection and try again.';
     }
     
-    alert(`Donation failed: ${errorMessage}`);
+    alert(`Payment failed: ${errorMessage}`);
   } finally {
     processing.value = false;
   }
@@ -452,9 +405,9 @@ const closeModal = () => {
   showSuccessModal.value = false;
 };
 
-const goToDonations = () => {
+const goToEvents = () => {
   showSuccessModal.value = false;
-  navigateTo('/donations');
+  navigateTo('/events');
 };
 
 // Initialize
@@ -484,4 +437,5 @@ const fetchUserProfile = async () => {
     console.error('Error fetching user profile:', err);
   }
 };
+
 </script>
