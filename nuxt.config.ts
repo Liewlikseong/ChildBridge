@@ -65,5 +65,9 @@ export default defineNuxtConfig({
     preference: 'light',
     fallback: 'light',
     classSuffix: ''
-  }
+  },
+  router: {
+    middleware: ['auth']
+  },
+  pages: true
 })
