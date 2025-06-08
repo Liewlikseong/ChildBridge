@@ -1,31 +1,37 @@
 <template>
-  <div class="min-h-screen bg-neutral-50">
-    <div class="bg-white border-b border-neutral-200 px-4 py-4">
+  <div class="min-h-screen bg-neutral-50 flex flex-col">
+    <!-- Header -->
+    <div class="bg-white border-b border-neutral-200 px-4 py-4 flex-shrink-0">
       <div class="container-custom">
         <h1 class="text-2xl font-bold text-neutral-900">Messages</h1>
         <p class="text-neutral-600 mt-1">Connect with our team and community</p>
       </div>
     </div>
 
-    <div class="container-custom py-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-        
-        <div class="lg:col-span-1 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col">
-          <div class="p-4 border-b border-neutral-200">
+    <!-- Main Chat Container -->
+    <div class="container-custom py-6 flex-1 flex flex-col min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+
+        <!-- Conversations Sidebar -->
+        <div class="lg:col-span-1 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col max-h-full">
+          <!-- Sidebar Header -->
+          <div class="p-4 border-b border-neutral-200 flex-shrink-0">
             <h2 class="text-lg font-semibold text-neutral-900">Conversations</h2>
           </div>
-          
-          <div class="flex-1 overflow-y-auto">
-            <div 
+
+          <!-- Conversations List - Scrollable -->
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <!-- Staff Group Chat (for donors) -->
+            <div
               v-if="userRole === 'donor'"
               @click="selectChat('group_staff')"
               :class="[
-                'p-4 border-b border-neutral-100 cursor-pointer hover:bg-neutral-50 transition-colors',
+                'p-4 border-b border-neutral-100 cursor-pointer hover:bg-neutral-50 transition-colors flex-shrink-0',
                 selectedChatType === 'group' && selectedChatId === 'staff' ? 'bg-primary-50 border-l-4 border-l-primary-500' : ''
               ]"
             >
               <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
@@ -36,7 +42,7 @@
                     {{ staffLastMessage || 'Contact our staffs they can help if got any general problem or just want to have a conversation' }}
                   </p>
                 </div>
-                <div class="flex flex-col items-end">
+                <div class="flex flex-col items-end flex-shrink-0">
                   <span v-if="staffLastMessageTime" class="text-xs text-neutral-400">
                     {{ formatTime(staffLastMessageTime) }}
                   </span>
@@ -44,16 +50,17 @@
               </div>
             </div>
 
-            <div 
+            <!-- Admin Group Chat (for donors) -->
+            <div
               v-if="userRole === 'donor'"
               @click="selectChat('group_admin')"
               :class="[
-                'p-4 border-b border-neutral-100 cursor-pointer hover:bg-neutral-50 transition-colors',
+                'p-4 border-b border-neutral-100 cursor-pointer hover:bg-neutral-50 transition-colors flex-shrink-0',
                 selectedChatType === 'group' && selectedChatId === 'admin' ? 'bg-primary-50 border-l-4 border-l-primary-500' : ''
               ]"
             >
               <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
@@ -64,7 +71,7 @@
                     {{ adminLastMessage || 'Contact our administrators they can help if got problem with the website' }}
                   </p>
                 </div>
-                <div class="flex flex-col items-end">
+                <div class="flex flex-col items-end flex-shrink-0">
                   <span v-if="adminLastMessageTime" class="text-xs text-neutral-400">
                     {{ formatTime(adminLastMessageTime) }}
                   </span>
@@ -72,40 +79,41 @@
               </div>
             </div>
 
-            <div v-if="userRole === 'staff' || userRole === 'admin'" class="space-y-0">
-              <div 
-                v-for="conversation in conversations" 
+            <!-- Direct Conversations (for staff/admin) -->
+            <div v-if="userRole === 'staff' || userRole === 'admin'">
+              <div
+                v-for="conversation in conversations"
                 :key="conversation.id"
                 @click="selectChat(`direct_${conversation.id}`)"
                 :class="[
-                  'p-4 border-b border-neutral-100 cursor-pointer hover:bg-neutral-50 transition-colors',
+                  'p-4 border-b border-neutral-100 cursor-pointer hover:bg-neutral-50 transition-colors flex-shrink-0',
                   selectedChatType === 'direct' && selectedChatId === conversation.id ? 'bg-primary-50 border-l-4 border-l-primary-500' : ''
                 ]"
               >
                 <div class="flex items-center space-x-3">
-                  <div class="relative">
-                    <img 
-                      v-if="conversation.avatar" 
-                      :src="conversation.avatar" 
+                  <div class="relative flex-shrink-0">
+                    <img
+                      v-if="conversation.avatar"
+                      :src="conversation.avatar"
                       :alt="conversation.name"
                       class="w-12 h-12 rounded-full object-cover"
                     />
-                    <div 
-                      v-else 
+                    <div
+                      v-else
                       class="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium"
                     >
                       {{ getInitials(conversation.name) }}
                     </div>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="flex items-center space-x-2">
-                      <h3 class="font-medium text-neutral-900">{{ conversation.name }}</h3>
-                      <span 
-                        v-if="conversation.role" 
+                    <div class="flex items-center space-x-2 mb-1">
+                      <h3 class="font-medium text-neutral-900 truncate">{{ conversation.name }}</h3>
+                      <span
+                        v-if="conversation.role"
                         :class="[
-                          'text-xs px-2 py-1 rounded-full font-medium',
-                          conversation.role === 'donor' ? 'bg-blue-100 text-blue-800' : 
-                          conversation.role === 'staff' ? 'bg-green-100 text-green-800' : 
+                          'text-xs px-2 py-1 rounded-full font-medium flex-shrink-0',
+                          conversation.role === 'donor' ? 'bg-blue-100 text-blue-800' :
+                          conversation.role === 'staff' ? 'bg-green-100 text-green-800' :
                           'bg-purple-100 text-purple-800'
                         ]"
                       >
@@ -116,7 +124,7 @@
                       {{ conversation.lastMessage || 'No messages yet' }}
                     </p>
                   </div>
-                  <div class="flex flex-col items-end">
+                  <div class="flex flex-col items-end flex-shrink-0">
                     <span v-if="conversation.lastMessageTime" class="text-xs text-neutral-400">
                       {{ formatTime(conversation.lastMessageTime) }}
                     </span>
@@ -124,6 +132,7 @@
                 </div>
               </div>
 
+              <!-- Empty State for Conversations -->
               <div v-if="conversations.length === 0" class="p-6 text-center text-neutral-500">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -134,14 +143,16 @@
           </div>
         </div>
 
-        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col">
-          <div v-if="selectedChatId" class="p-4 border-b border-neutral-200 bg-white">
+        <!-- Chat Area -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col max-h-full">
+          <!-- Chat Header -->
+          <div v-if="selectedChatId" class="p-4 border-b border-neutral-200 bg-white flex-shrink-0">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
-                <div v-if="chatHeader.avatar" class="relative">
+                <div v-if="chatHeader.avatar" class="relative flex-shrink-0">
                   <img :src="chatHeader.avatar" :alt="chatHeader.name" class="w-10 h-10 rounded-full object-cover" />
                 </div>
-                <div v-else class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium" :class="chatHeader.bgColor">
+                <div v-else class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium flex-shrink-0" :class="chatHeader.bgColor">
                   <svg v-if="chatHeader.icon === 'staff'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
@@ -150,14 +161,14 @@
                   </svg>
                   <span v-else>{{ chatHeader.icon }}</span>
                 </div>
-                <div>
-                  <h3 class="font-semibold text-neutral-900">{{ chatHeader.name }}</h3>
-                  <p class="text-sm text-neutral-500">{{ chatHeader.status }}</p>
+                <div class="min-w-0">
+                  <h3 class="font-semibold text-neutral-900 truncate">{{ chatHeader.name }}</h3>
+                  <p class="text-sm text-neutral-500 truncate">{{ chatHeader.status }}</p>
                 </div>
               </div>
-              
-              <div class="flex items-center space-x-2">
-                <button @click="refreshMessages" class="p-2 text-neutral-400 hover:text-neutral-600 rounded-lg hover:bg-neutral-100">
+
+              <div class="flex items-center space-x-2 flex-shrink-0">
+                <button @click="refreshMessages" class="p-2 text-neutral-400 hover:text-neutral-600 rounded-lg hover:bg-neutral-100 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
@@ -166,7 +177,9 @@
             </div>
           </div>
 
-          <div class="flex-1 overflow-y-auto p-4" ref="messagesContainer">
+          <!-- Messages Area - Scrollable -->
+          <div class="flex-1 overflow-y-auto p-4 min-h-0" ref="messagesContainer">
+            <!-- Empty State -->
             <div v-if="!selectedChatId" class="h-full flex items-center justify-center text-neutral-500">
               <div class="text-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,29 +190,89 @@
               </div>
             </div>
 
+            <!-- Messages -->
             <div v-else class="space-y-4">
               <div v-for="message in messages" :key="message.id" class="flex" :class="message.isMine ? 'justify-end' : 'justify-start'">
                 <div class="max-w-xs lg:max-w-md">
-                  <div 
+                  <div
                     :class="[
                       'rounded-lg px-4 py-2 break-words',
-                      message.isMine 
-                        ? 'bg-primary-500 text-white rounded-br-none' 
+                      message.isMine
+                        ? 'bg-primary-500 text-white rounded-br-none'
                         : 'bg-neutral-100 text-neutral-900 rounded-bl-none'
                     ]"
                   >
+                    <!-- Sender Name for Group Messages -->
                     <div v-if="!message.isMine && selectedChatType === 'group' && message.senderName" class="text-xs font-medium mb-1 opacity-75">
                       {{ message.senderName }}
                     </div>
-                    <p class="text-sm">{{ message.content }}</p>
+
+                    <!-- Media Files -->
+                    <div v-if="message.media_files && message.media_files.length > 0" class="mb-2">
+                    <!-- Single Image -->
+                    <div v-if="message.media_files.length === 1" class="mb-2">
+                        <img
+                        :src="message.media_files[0].url"
+                        alt="Shared image"
+                        class="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        @click="openImageModal(message.media_files[0].url)"
+                        loading="lazy"
+                        />
+                    </div>
+                    
+                    <!-- Multiple Images Grid -->
+                    <div v-else class="grid gap-1 mb-2" :class="{
+                        'grid-cols-2': message.media_files.length === 2,
+                        'grid-cols-2': message.media_files.length === 3,
+                        'grid-cols-2': message.media_files.length >= 4
+                    }">
+                        <div
+                        v-for="(media, index) in message.media_files.slice(0, 4)"
+                        :key="index"
+                        class="relative"
+                        :class="{
+                            'col-span-2': message.media_files.length === 3 && index === 0,
+                            'aspect-square': message.media_files.length > 1
+                        }"
+                        >
+                        <img
+                            :src="media.url"
+                            alt="Shared image"
+                            class="w-full h-full object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
+                            :class="{
+                            'max-w-xs': message.media_files.length === 1,
+                            'max-h-32': message.media_files.length > 1
+                            }"
+                            @click="openImageModal(media.url)"
+                            loading="lazy"
+                        />
+                        
+                        <!-- Show count overlay for 4+ images -->
+                        <div
+                            v-if="index === 3 && message.media_files.length > 4"
+                            class="absolute inset-0 bg-black bg-opacity-50 rounded flex items-center justify-center cursor-pointer"
+                            @click="openImageModal(media.url)"
+                        >
+                            <span class="text-white font-semibold">+{{ message.media_files.length - 4 }}</span>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
+
+                    <!-- Message Content -->
+                    <p v-if="message.content && !message.content.startsWith('📷')" class="text-sm">{{ message.content }}</p>
+                    <p v-else-if="message.content.startsWith('📷')" class="text-sm italic opacity-75">{{ message.content }}</p>
                   </div>
-                  
+
+                  <!-- Message Time -->
                   <div class="flex items-center mt-1" :class="message.isMine ? 'justify-end' : 'justify-start'">
                     <span class="text-xs text-neutral-400">{{ formatTime(message.created_at) }}</span>
                   </div>
                 </div>
               </div>
 
+              <!-- Typing Indicator -->
               <div v-if="isTyping" class="flex justify-start">
                 <div class="bg-neutral-100 rounded-lg px-4 py-2 rounded-bl-none">
                   <div class="flex space-x-1">
@@ -212,9 +285,110 @@
             </div>
           </div>
 
-          <div v-if="selectedChatId" class="p-4 border-t border-neutral-200 bg-white">
+          <!-- Image Preview Area -->
+          <div v-if="imagePreview.length > 0" class="p-4 border-t border-neutral-200 bg-neutral-50 flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-sm font-medium text-neutral-700">
+                Image Preview ({{ imagePreview.length }} {{ imagePreview.length === 1 ? 'image' : 'images' }})
+                </h4>
+                <button
+                @click="clearImagePreview"
+                class="text-neutral-400 hover:text-neutral-600 transition-colors"
+                :disabled="isUploadingImage"
+                >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                </button>
+            </div>
+            
+            <!-- Image Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+                <div
+                v-for="image in imagePreview"
+                :key="image.id"
+                class="relative group"
+                >
+                <img
+                    :src="image.url"
+                    :alt="image.name"
+                    class="w-full h-24 object-cover rounded-lg border border-neutral-200"
+                />
+                
+                <!-- Upload Progress Overlay -->
+                <div
+                    v-if="image.isUploading"
+                    class="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center"
+                >
+                    <div class="text-white text-xs font-medium">
+                    {{ uploadProgress[image.id] || 0 }}%
+                    </div>
+                </div>
+                
+                <!-- Remove Button -->
+                <button
+                    @click="removeImagePreview(image.id)"
+                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    :disabled="image.isUploading"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                <!-- Upload Status -->
+                <div class="absolute bottom-1 left-1 right-1">
+                    <div
+                    v-if="image.isUploading"
+                    class="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-90"
+                    >
+                    Uploading...
+                    </div>
+                    <div
+                    v-else-if="image.uploaded_url"
+                    class="bg-green-500 text-white text-xs px-2 py-1 rounded opacity-90"
+                    >
+                    Ready
+                    </div>
+                    <div
+                    v-else
+                    class="bg-red-500 text-white text-xs px-2 py-1 rounded opacity-90"
+                    >
+                    Failed
+                    </div>
+                </div>
+                </div>
+            </div>
+            
+            <!-- Send Button -->
+            <div class="flex justify-between items-center">
+                <div class="text-xs text-neutral-500">
+                {{ imagePreview.filter(img => img.uploaded_url).length }} of {{ imagePreview.length }} ready to send
+                </div>  
+            </div>
+            </div>
+
+
+          <!-- Message Input Area -->
+          <div v-if="selectedChatId" class="p-4 border-t border-neutral-200 bg-white flex-shrink-0">
             <form @submit.prevent="sendMessage" class="flex items-end space-x-3">
-              <div class="flex-1">
+              <!-- Image Upload Button -->
+                <label class="flex-shrink-0 cursor-pointer text-neutral-400 hover:text-primary-500 transition-colors">
+                <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    @change="handleImageUpload"
+                    class="sr-only"
+                    :disabled="isUploadingImage"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                </label>
+
+              <!-- Message Input -->
+              <div class="flex-1 min-w-0">
                 <textarea
                   v-model="newMessage"
                   @keydown.enter.exact.prevent="sendMessage"
@@ -222,14 +396,17 @@
                   @input="sendTypingStatus"
                   placeholder="Type a message..."
                   rows="1"
-                  class="w-full resize-none border border-neutral-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  class="w-full resize-none border border-neutral-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
                   style="min-height: 40px; max-height: 120px;"
+                  :disabled="imagePreview.length > 0"
                 ></textarea>
               </div>
+              
+              <!-- Send Button -->
               <button
                 type="submit"
-                :disabled="!newMessage.trim() || isSending"
-                class="bg-primary-500 text-white rounded-lg p-2 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                :disabled="(!newMessage.trim() && !imagePreview) || isSending || isUploadingImage"
+                class="bg-primary-500 text-white rounded-lg p-2 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               >
                 <svg v-if="!isSending" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -239,11 +416,36 @@
                 </svg>
               </button>
             </form>
+
+            <!-- Input Help Text -->
             <div class="mt-2 text-xs text-neutral-500">
-              Press Enter to send, Shift+Enter for new line
+              Press Enter to send, Shift+Enter for new line • Click 📷 to send images
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div
+      v-if="selectedImage"
+      class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+      @click="closeImageModal"
+    >
+      <div class="relative max-w-4xl max-h-full p-4">
+        <img
+          :src="selectedImage"
+          alt="Full size image"
+          class="max-w-full max-h-full object-contain rounded-lg"
+        />
+        <button
+          @click="closeImageModal"
+          class="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-opacity"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -272,12 +474,17 @@ const isTyping = ref(false) // This would require broadcast for real-time
 const messagesContainer = ref(null)
 const userProfile = ref(null)
 const userRole = ref('donor') // Default role
+const selectedImage = ref(null)
 
 // Group chat specific data for donors
 const staffLastMessage = ref('')
 const staffLastMessageTime = ref(null)
 const adminLastMessage = ref('')
 const adminLastMessageTime = ref(null)
+
+const imagePreview = ref([])
+const isUploadingImage = ref(false)
+const uploadProgress = ref({})
 
 // Real-time subscription variables
 let directMessageSubscription = null
@@ -347,6 +554,138 @@ const formatTime = (timestamp) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+const openImageModal = (imageUrl) => {
+  selectedImage.value = imageUrl
+}
+
+const closeImageModal = () => {
+  selectedImage.value = null
+}
+
+const handleImageUpload = async (event) => {
+  const files = Array.from(event.target.files) // Get all selected files
+  if (!files.length) return
+
+  // Validate files
+  const validFiles = files.filter(file => {
+    if (!file.type.startsWith('image/')) {
+      alert(`${file.name} is not a valid image file`)
+      return false
+    }
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      alert(`${file.name} is too large. Maximum size is 10MB.`)
+      return false
+    }
+    return true
+  })
+
+  if (!validFiles.length) return
+
+  // Check total number of images (limit to 5 for example)
+  if (imagePreview.value.length + validFiles.length > 5) {
+    alert('You can only upload up to 5 images at once')
+    return
+  }
+
+  isUploadingImage.value = true
+
+  try {
+    const uploadPromises = validFiles.map(async (file, index) => {
+      const fileId = Date.now() + index // Unique ID for each file
+      
+      // Create preview immediately
+      const preview = {
+        id: fileId,
+        url: URL.createObjectURL(file),
+        file: file,
+        name: file.name,
+        uploaded_url: null,
+        isUploading: true
+      }
+      
+      imagePreview.value.push(preview)
+      uploadProgress.value[fileId] = 0
+
+      try {
+        // Upload to Supabase storage
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`
+        const filePath = `messages/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(filePath, file, {
+            onUploadProgress: (progress) => {
+              uploadProgress.value[fileId] = Math.round((progress.loaded / progress.total) * 100)
+            }
+          })
+
+        if (uploadError) throw uploadError
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('media')
+          .getPublicUrl(filePath)
+
+        // Update preview with uploaded URL
+        const previewIndex = imagePreview.value.findIndex(p => p.id === fileId)
+        if (previewIndex !== -1) {
+          imagePreview.value[previewIndex].uploaded_url = publicUrl
+          imagePreview.value[previewIndex].isUploading = false
+        }
+
+        return { success: true, fileId }
+      } catch (error) {
+        console.error(`Error uploading ${file.name}:`, error)
+        // Remove failed upload from preview
+        imagePreview.value = imagePreview.value.filter(p => p.id !== fileId)
+        delete uploadProgress.value[fileId]
+        return { success: false, error, fileName: file.name }
+      }
+    })
+
+    const results = await Promise.all(uploadPromises)
+    
+    // Show any upload errors
+    const failedUploads = results.filter(r => !r.success)
+    if (failedUploads.length > 0) {
+      alert(`Failed to upload: ${failedUploads.map(f => f.fileName).join(', ')}`)
+    }
+
+  } catch (error) {
+    console.error('Error in upload process:', error)
+    alert('An error occurred during upload. Please try again.')
+  } finally {
+    isUploadingImage.value = false
+  }
+
+  // Clear the file input
+  event.target.value = ''
+}
+
+const clearImagePreview = () => {
+  imagePreview.value.forEach(preview => {
+    if (preview.url) {
+      URL.revokeObjectURL(preview.url)
+    }
+  })
+  imagePreview.value = []
+  isUploadingImage.value = false
+  uploadProgress.value = {}
+}
+
+const removeImagePreview = (imageId) => {
+  const index = imagePreview.value.findIndex(p => p.id === imageId)
+  if (index !== -1) {
+    const preview = imagePreview.value[index]
+    if (preview.url) {
+      URL.revokeObjectURL(preview.url)
+    }
+    imagePreview.value.splice(index, 1)
+    delete uploadProgress.value[imageId]
+  }
 }
 
 // Fetch user profile and role
@@ -451,7 +790,7 @@ const loadStaffAdminConversations = async () => {
       // Prioritize donors
       if (a.role === 'donor' && b.role !== 'donor') return -1
       if (b.role === 'donor' && a.role !== 'donor') return 1
-      
+
       // Sort by last message time
       if (!a.lastMessageTime && !b.lastMessageTime) return 0
       if (!a.lastMessageTime) return 1
@@ -478,7 +817,7 @@ const fetchMessages = async () => {
         const { data: groupMsgs, error: groupError } = await supabase
           .from('messages')
           .select(`
-            id, content, created_at, sender_id, is_staff_reply, receiver_id,
+            id, content, created_at, sender_id, is_staff_reply, receiver_id, media_files,
             sender:profiles!messages_sender_id_fkey(first_name, last_name, role)
           `)
           .eq('group_type', 'staff')
@@ -494,13 +833,13 @@ const fetchMessages = async () => {
         const { data: groupData, error: groupError } = await supabase
           .from('messages')
           .select(`
-            id, content, created_at, sender_id,
+            id, content, created_at, sender_id, media_files,
             sender:profiles!messages_sender_id_fkey(first_name, last_name, role)
           `)
           .eq('group_type', selectedChatId.value)
           .eq('message_type', 'group')
           .order('created_at', { ascending: true })
-        
+
         if (groupError) throw groupError
         data = groupData
       }
@@ -510,7 +849,7 @@ const fetchMessages = async () => {
       const { data: directData, error: directError } = await supabase
         .from('messages')
         .select(`
-          id, content, created_at, sender_id, receiver_id, is_from_group, group_context,
+          id, content, created_at, sender_id, receiver_id, is_from_group, group_context, media_files,
           sender:profiles!messages_sender_id_fkey(first_name, last_name, role, avatar_url)
         `)
         .eq('message_type', 'direct')
@@ -528,8 +867,8 @@ const fetchMessages = async () => {
 
     // Process messages with proper sender information
     messages.value = data.map(msg => {
-      const senderName = msg.sender 
-        ? `${msg.sender.first_name || ''} ${msg.sender.last_name || ''}`.trim() 
+      const senderName = msg.sender
+        ? `${msg.sender.first_name || ''} ${msg.sender.last_name || ''}`.trim()
         : (msg.sender_id === currentUserId ? 'You' : 'Unknown')
 
       return {
@@ -548,9 +887,21 @@ const fetchMessages = async () => {
   }
 }
 
-// Send a message
+// Send a message (handles both text and images)
 const sendMessage = async () => {
-  if (!newMessage.value.trim() || !selectedChatId.value || !user.value?.id || isSending.value) return
+  // Check if there are images to send
+  const hasImages = imagePreview.value.length > 0
+  const hasText = newMessage.value.trim().length > 0
+  
+  if (!hasImages && !hasText) return
+  if (!selectedChatId.value || !user.value?.id || isSending.value) return
+
+  // If there are images but some are still uploading, wait or show error
+  const stillUploading = imagePreview.value.some(img => img.isUploading)
+  if (hasImages && stillUploading) {
+    alert('Please wait for all images to finish uploading')
+    return
+  }
 
   isSending.value = true
   const messageContent = newMessage.value.trim()
@@ -562,6 +913,15 @@ const sendMessage = async () => {
     let messageData, error
     const currentUserId = user.value.id
 
+    // Prepare media files array if there are images
+    const mediaFiles = hasImages ? imagePreview.value
+      .filter(img => img.uploaded_url && !img.isUploading)
+      .map(img => ({
+        url: img.uploaded_url,
+        type: 'image',
+        name: img.name
+      })) : null
+
     if (selectedChatType.value === 'group') {
       // Group message logic
       if (userRole.value === 'donor' && selectedChatId.value === 'staff') {
@@ -572,14 +932,15 @@ const sendMessage = async () => {
           .eq('role', 'staff')
 
         if (staffError) throw staffError
-        
+
         const directMessages = staffMembers.map(staff => ({
           content: messageContent,
           sender_id: currentUserId,
           receiver_id: staff.id,
           message_type: 'direct',
           is_from_group: true,
-          group_context: 'staff'
+          group_context: 'staff',
+          ...(mediaFiles && { media_files: mediaFiles })
         }))
 
         const { error: insertError } = await supabase
@@ -595,9 +956,10 @@ const sendMessage = async () => {
             sender_id: currentUserId,
             group_type: 'staff',
             message_type: 'group',
+            ...(mediaFiles && { media_files: mediaFiles })
           })
           .select(`
-            id, content, created_at, sender_id,
+            id, content, created_at, sender_id, media_files,
             sender:profiles!messages_sender_id_fkey(first_name, last_name, role)
           `)
           .single()
@@ -614,9 +976,10 @@ const sendMessage = async () => {
             sender_id: currentUserId,
             group_type: selectedChatId.value,
             message_type: 'group',
+            ...(mediaFiles && { media_files: mediaFiles })
           })
           .select(`
-            id, content, created_at, sender_id,
+            id, content, created_at, sender_id, media_files,
             sender:profiles!messages_sender_id_fkey(first_name, last_name, role)
           `)
           .single()
@@ -643,10 +1006,11 @@ const sendMessage = async () => {
           sender_id: currentUserId,
           receiver_id: selectedChatId.value,
           message_type: 'direct',
-          is_staff_reply: userRole.value === 'staff' && receiverProfile.role === 'donor'
+          is_staff_reply: userRole.value === 'staff' && receiverProfile.role === 'donor',
+          ...(mediaFiles && { media_files: mediaFiles })
         })
         .select(`
-          id, content, created_at, sender_id, receiver_id, is_staff_reply,
+          id, content, created_at, sender_id, receiver_id, is_staff_reply, media_files,
           sender:profiles!messages_sender_id_fkey(first_name, last_name, role, avatar_url)
         `)
         .single()
@@ -664,7 +1028,8 @@ const sendMessage = async () => {
             receiver_id: selectedChatId.value,
             group_type: 'staff',
             message_type: 'group',
-            is_staff_reply: true
+            is_staff_reply: true,
+            ...(mediaFiles && { media_files: mediaFiles })
           })
 
         if (groupError) console.error('Error creating group message for staff reply:', groupError)
@@ -677,34 +1042,42 @@ const sendMessage = async () => {
     const msgToAdd = {
       ...messageData,
       isMine: true,
-      senderName: userProfile.value 
-        ? `${userProfile.value.first_name || ''} ${userProfile.value.last_name || ''}`.trim() 
+      senderName: userProfile.value
+        ? `${userProfile.value.first_name || ''} ${userProfile.value.last_name || ''}`.trim()
         : 'You'
     }
 
     messages.value.push(msgToAdd)
     scrollToBottom()
 
+    // Clear image preview after successful send
+    if (hasImages) {
+      clearImagePreview()
+    }
+
     // Update last message in chat lists
+    const displayContent = hasImages && !hasText ? '📷 Image' : messageContent
+    
     if (selectedChatType.value === 'group') {
       if (selectedChatId.value === 'staff') {
-        staffLastMessage.value = messageContent
+        staffLastMessage.value = displayContent
         staffLastMessageTime.value = msgToAdd.created_at
       } else if (selectedChatId.value === 'admin') {
-        adminLastMessage.value = messageContent
+        adminLastMessage.value = displayContent
         adminLastMessageTime.value = msgToAdd.created_at
       }
     } else if (selectedChatType.value === 'direct') {
       const conv = conversations.value.find(c => c.id === selectedChatId.value)
       if (conv) {
-        conv.lastMessage = messageContent
+        conv.lastMessage = displayContent
         conv.lastMessageTime = msgToAdd.created_at
       }
     }
 
   } catch (error) {
     console.error('Error sending message:', error)
-    alert('Failed to send message. Please try again.')
+    console.error('Error details:', error.message, error.details)
+    alert(`Failed to send message: ${error.message || 'Please try again.'}`)
   } finally {
     isSending.value = false
   }
@@ -742,17 +1115,17 @@ const setupRealtimeListeners = () => {
       async (payload) => {
         const newMessageData = payload.new;
         if (newMessageData.message_type !== 'direct') return;
-        
+
         // If donor is viewing staff group and receives direct message from staff
-        if (userRole.value === 'donor' && 
-            selectedChatType.value === 'group' && 
+        if (userRole.value === 'donor' &&
+            selectedChatType.value === 'group' &&
             selectedChatId.value === 'staff' &&
             newMessageData.is_from_group) {
           // This message should appear in the group chat view
           await fetchMessages() // Refresh to get the corresponding group message
           return
         }
-        
+
         if (selectedChatType.value === 'direct' && selectedChatId.value === newMessageData.sender_id) {
           // Add message to current direct chat
           messages.value.push({
@@ -789,11 +1162,11 @@ const setupRealtimeListeners = () => {
       async (payload) => {
         const newMessageData = payload.new;
         if (newMessageData.sender_id === user.value.id) return; // Skip own messages
-        
+
         // For donors: only show staff group messages that are meant for them
-        if (userRole.value === 'donor' && 
+        if (userRole.value === 'donor' &&
             newMessageData.group_type === 'staff') {
-          
+
           // Check if this message is for this donor (staff reply)
           if (newMessageData.is_staff_reply && newMessageData.receiver_id === user.value.id) {
             if (selectedChatType.value === 'group' && selectedChatId.value === 'staff') {
@@ -872,7 +1245,10 @@ const selectChat = async (chatId) => {
     selectedChatType.value = 'direct'
     selectedChatId.value = userId
   }
-  
+
+  // Clear any existing image preview when switching chats
+  clearImagePreview();
+
   // Fetch messages for the selected chat
   await fetchMessages()
 }
@@ -919,6 +1295,38 @@ onUnmounted(() => {
   if (typingChannel) {
     supabase.removeChannel(typingChannel)
   }
+  // 6. ADD onUnmounted CLEANUP
+  clearImagePreview() // Clean up any image preview URLs
 })
 </script>
 
+<style scoped>
+/* Ensure proper scrolling behavior */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Ensure min-height works properly */
+.min-h-0 {
+  min-height: 0;
+}
+</style>
