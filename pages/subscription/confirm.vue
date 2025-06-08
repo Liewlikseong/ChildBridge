@@ -251,14 +251,8 @@
           </p>
           <div class="space-y-3">
             <button
-              @click="goToDashboard"
-              class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
-            >
-              Manage Subscription
-            </button>
-            <button
               @click="goToDonations"
-              class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors"
+              class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
             >
               View All Donations
             </button>
@@ -532,11 +526,6 @@ const processSubscription = async () => {
 // Modal actions
 const closeModal = () => {
   showSuccessModal.value = false;
-};
-
-const goToDashboard = () => {
-  showSuccessModal.value = false;
-  navigateTo('/dashboard/subscriptions');
 };
 
 const goToDonations = () => {

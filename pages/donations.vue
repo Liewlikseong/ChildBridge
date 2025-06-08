@@ -127,9 +127,6 @@
               </div>
               <h3 class="text-lg font-medium text-gray-900">{{ subscription.amount }} / {{ subscription.interval_type }}</h3>
               <p class="text-sm text-gray-600 capitalize">{{ subscription.category }}</p>
-              <p class="text-sm text-gray-500 mt-1">
-                Next payment: {{ formatDate(subscription.current_period_end) }}
-              </p>
             </div>
             <div class="flex space-x-2">
               <button 
@@ -305,7 +302,7 @@
           <div class="space-y-3 text-sm">
             <div class="flex justify-between">
               <span class="font-medium text-gray-700">Amount:</span>
-              <span>${{ selectedDonation.amount }} {{ selectedDonation.currency.toUpperCase() }}</span>
+              <span>{{ selectedDonation.amount }} {{ selectedDonation.currency.toUpperCase() }}</span>
             </div>
             <div class="flex justify-between">
               <span class="font-medium text-gray-700">Date:</span>
