@@ -93,7 +93,10 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                <button class="text-white bg-primary-500 hover:bg-primary-600 px-3 py-1 rounded-md text-xs">EDIT</button>
+                <button
+                  class="text-white bg-primary-500 hover:bg-primary-600 px-3 py-1 rounded-md text-xs"
+                  @click="goToEdit(user)"
+                >EDIT</button>
                 <button
                   v-if="canDelete(user)"
                   @click="deleteUser(user.id, user.role)"
@@ -115,6 +118,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useProfile } from '~/composables/useProfile';
 import { useDebounceFn } from '@vueuse/core';
+import { useRouter } from 'vue-router';
 
 definePageMeta({
   layout: 'admin',
@@ -132,6 +136,7 @@ const deleteError = ref('');
 const activeRoleFilter = ref('');
 const searchQuery = ref('');
 const activeManagementTab = ref('');
+const router = useRouter();
 
 // --- Computed Properties ---
 const isHeadAdmin = computed(() => currentUser.value?.role === 'head_admin');
@@ -307,7 +312,12 @@ const getRoleClass = (role) => {
 const canDelete = (user) => {
   if (!currentUser.value) return false;
   if (isHeadAdmin.value) {
-    return user.role === 'admin' && activeRoleFilter.value === 'admin';
+    // In admin management tab, can delete admins; in user management, can delete staff and donors
+    if (activeManagementTab.value === 'admins') {
+      return user.role === 'admin';
+    } else {
+      return ['staff', 'donor'].includes(user.role);
+    }
   }
   return ['staff', 'donor'].includes(user.role);
 };
@@ -330,6 +340,14 @@ const deleteUser = async (userId, userRole) => {
     deleteError.value = err.data?.statusMessage || err.message || 'An unexpected error occurred.';
   } finally {
     deletingId.value = null;
+  }
+};
+
+const goToEdit = (user) => {
+  if (user.role === 'admin') {
+    router.push(`/admin/edit-admin/${user.id}`);
+  } else {
+    router.push(`/admin/edit-user/${user.id}`);
   }
 };
 </script> 
