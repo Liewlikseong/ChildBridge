@@ -92,10 +92,9 @@ onMounted(async () => {
       const { data: existingProfile, error: profileCheckError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', user.id)
-        .single();
+        .eq('id', user.id);
 
-      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+      if (profileCheckError) {
         console.error('Error checking profile:', profileCheckError);
       }
 

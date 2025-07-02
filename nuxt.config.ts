@@ -16,14 +16,14 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { 
-          hid: 'description', 
           name: 'description', 
           content: 'ChildBridge connects donors with the Jing Sun Welfare Society orphanage through transparent donations and direct communication.' 
         }
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' }
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' },
+        { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' }
       ]
     }
   },
@@ -38,24 +38,8 @@ export default defineNuxtConfig({
   supabase: {
     redirectOptions: {
       login: '/auth/login',
-      callback: '/auth/confirm',
-      exclude: ['/*'],
-      redirect: false
-    },
-    cookieOptions: {
-      name: 'sb',
-      lifetime: 60 * 60 * 8,
-      domain: '',
-      path: '/',
-      sameSite: 'lax'
-    },
-    clientOptions: {
-      auth: {
-        flowType: 'pkce',
-        detectSessionInUrl: true,
-        persistSession: true,
-        autoRefreshToken: true
-      }
+      callback: '/auth/callback',
+      exclude: ['/*']
     }
   },
   build: {
@@ -65,9 +49,6 @@ export default defineNuxtConfig({
     preference: 'light',
     fallback: 'light',
     classSuffix: ''
-  },
-  router: {
-    middleware: ['auth']
   },
   pages: true
 })

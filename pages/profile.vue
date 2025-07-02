@@ -61,6 +61,15 @@
       {{ error }}
     </div>
 
+    <!-- No Profile State -->
+    <div v-else-if="!loading && !profileData" class="bg-gray-50 rounded-xl shadow p-4 mb-6">
+      <div class="text-center">
+        <i class="fas fa-user text-gray-400 text-3xl mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">No Profile Found</h3>
+        <p class="text-gray-600">Your profile information is not available.</p>
+      </div>
+    </div>
+
     <!-- Personal Information -->
     <div v-if="profileData" class="bg-white rounded-xl shadow p-4 mb-6">
       <div class="flex justify-between items-center mb-4">

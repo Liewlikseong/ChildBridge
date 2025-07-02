@@ -71,6 +71,8 @@
                 <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Profile</NuxtLink>
                 <NuxtLink to="/donations" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">My Donations</NuxtLink>
                 <NuxtLink to="/messages" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Messages</NuxtLink>
+                <NuxtLink v-if="['admin', 'head_admin'].includes(profile?.role)" to="/admin/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Admin</NuxtLink>
+                <NuxtLink v-if="profile?.role === 'staff'" to="/staff/dashboard" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Staff</NuxtLink>
                 <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Logout</button>
               </div>
             </div>
@@ -118,6 +120,8 @@
             <NuxtLink to="/profile" class="block py-2 text-neutral-700">Profile</NuxtLink>
             <NuxtLink to="/donations" class="block py-2 text-neutral-700">My Donations</NuxtLink>
             <NuxtLink to="/messages" class="block py-2 text-neutral-700">Messages</NuxtLink>
+            <NuxtLink v-if="['admin', 'head_admin'].includes(profile?.role)" to="/admin/profile" class="block py-2 text-neutral-700">Admin</NuxtLink>
+            <NuxtLink v-if="profile?.role === 'staff'" to="/staff/dashboard" class="block py-2 text-neutral-700">Staff</NuxtLink>
             <button @click="logout" class="block py-2 text-neutral-700 w-full text-left">Logout</button>
           </div>
         </template>
@@ -127,11 +131,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useSupabaseClient, useSupabaseUser } from '#imports';
+import { useProfile } from '~/composables/useProfile';
 
 const user = useSupabaseUser();
 const supabase = useSupabaseClient();
+const { profile, fetchProfile } = useProfile();
 const mobileMenuOpen = ref(false);
 const userMenuOpen = ref(false);
 const userMenuContainer = ref(null);
@@ -200,15 +206,25 @@ const fetchUserProfile = async () => {
     const { data, error } = await supabase
       .from('profiles')
       .select('first_name, last_name, avatar_url')
-      .eq('id', user.value.id)
-      .single();
+      .eq('id', user.value.id);
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+    if (error) {
       console.error('Error fetching profile:', error);
       return;
     }
     
-    userProfile.value = data;
+    // Handle cases where no profile exists or multiple profiles exist
+    if (!data || data.length === 0) {
+      console.warn(`No profile found for user ${user.value.id}`);
+      userProfile.value = null;
+      return;
+    }
+
+    if (data.length > 1) {
+      console.warn(`Multiple profiles found for user ${user.value.id}, using the first one`);
+    }
+
+    userProfile.value = data[0]; // Use the first profile if multiple exist
   } catch (error) {
     console.error('Error fetching user profile:', error);
   }
@@ -234,7 +250,7 @@ const handleClickOutside = (event) => {
 // Watch for user changes and fetch profile
 watch(user, (newUser) => {
   if (newUser) {
-    fetchUserProfile();
+    fetchProfile();
     imageError.value = false; // Reset image error state
   } else {
     userProfile.value = null;
@@ -244,7 +260,7 @@ watch(user, (newUser) => {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
   if (user.value) {
-    fetchUserProfile();
+    fetchProfile();
   }
 });
 
