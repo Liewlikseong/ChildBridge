@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // --- Authorization ---
-  const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -28,15 +28,34 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden: You do not have permission to perform this action.' });
   }
 
-  // --- Invite User ---
+  // Get the correct base URL
+  const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+  const redirectUrl = `${baseUrl}/auth/set-password`;
+
+  console.log('Inviting user with redirect URL:', redirectUrl);
+
+  // --- Invite User with Custom Redirect ---
   const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
     email,
-    { data: { first_name: firstName, last_name: lastName, role } }
+    {
+      data: { 
+        first_name: firstName, 
+        last_name: lastName, 
+        role 
+      },
+      redirectTo: redirectUrl
+    }
   );
 
   if (inviteError) {
+    console.error('Invite error:', inviteError);
     throw createError({ statusCode: 400, statusMessage: inviteError.message });
   }
 
-  return { message: 'User invited successfully. They will receive an email to set up their account.' };
-}); 
+  console.log('User invited successfully:', { email, redirectUrl });
+  
+  return { 
+    message: 'User invited successfully. They will receive an email to set up their account.',
+    redirectUrl: redirectUrl // Include this for debugging
+  };
+});

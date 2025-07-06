@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Authentication required.' });
   }
 
-  const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
   // Verify that the user making the request is an admin or head_admin
   const { data: requestorProfile, error: requestorProfileError } = await supabaseAdmin
