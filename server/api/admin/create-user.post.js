@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_KEY;
 
   if (!supabaseUrl || !serviceKey) {
     throw createError({ statusCode: 500, statusMessage: 'Server configuration error: Supabase environment variables are not set.' });

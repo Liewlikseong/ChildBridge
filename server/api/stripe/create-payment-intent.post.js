@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
       
       const { createClient } = await import('@supabase/supabase-js');
       const supabaseUrl = config.public.supabaseUrl || process.env.SUPABASE_URL;
-      const supabaseKey = config.supabaseServiceKey || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+      const supabaseKey = config.supabaseServiceKey || process.env.SUPABASE_KEY || process.env.SUPABASE_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
         throw createError({

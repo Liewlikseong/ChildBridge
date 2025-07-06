@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     } catch (error) {
       const { createClient } = await import('@supabase/supabase-js');
       const supabaseUrl = process.env.SUPABASE_URL || useRuntimeConfig().public.supabaseUrl;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || useRuntimeConfig().supabaseServiceKey;
+      const supabaseKey = process.env.SUPABASE_KEY || useRuntimeConfig().supabaseServiceKey;
       supabase = createClient(supabaseUrl, supabaseKey);
     }
 
