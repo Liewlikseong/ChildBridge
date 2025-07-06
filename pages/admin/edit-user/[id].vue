@@ -23,6 +23,24 @@
             <option value="donor">Donor</option>
           </select>
         </div>
+        <div>
+          <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+          <select v-model="formData.gender" id="gender" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+            <option value="prefer_not_to_say">Prefer not to say</option>
+          </select>
+        </div>
+        <div>
+          <label for="birthDate" class="block text-sm font-medium text-gray-700">Birth Date</label>
+          <input type="date" v-model="formData.birthDate" id="birthDate" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+        </div>
+        <div class="sm:col-span-2">
+          <label for="occupation" class="block text-sm font-medium text-gray-700">Occupation</label>
+          <input type="text" v-model="formData.occupation" id="occupation" placeholder="e.g., Software Engineer, Teacher, Student" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+        </div>
       </div>
       <div class="flex justify-end pt-6">
         <button type="button" @click="$router.back()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -57,7 +75,10 @@ const formData = ref({
   email: '',
   firstName: '',
   lastName: '',
-  role: 'staff'
+  role: 'staff',
+  gender: '',
+  birthDate: '',
+  occupation: ''
 });
 
 const fetchUser = async () => {
@@ -69,7 +90,10 @@ const fetchUser = async () => {
       email: data.email,
       firstName: data.first_name,
       lastName: data.last_name,
-      role: data.role
+      role: data.role,
+      gender: data.gender,
+      birthDate: data.birth_date,
+      occupation: data.occupation
     };
   } catch (err) {
     error.value = err.data?.statusMessage || 'Failed to load user.';
@@ -87,9 +111,18 @@ const updateUser = async () => {
   error.value = null;
   successMessage.value = '';
   try {
+    const updateData = {
+      email: formData.value.email,
+      firstName: formData.value.firstName,
+      lastName: formData.value.lastName,
+      role: formData.value.role,
+      gender: formData.value.gender,
+      birthDate: formData.value.birthDate,
+      occupation: formData.value.occupation
+    };
     await $fetch(`/api/users/${route.params.id}/update`, {
       method: 'POST',
-      body: formData.value
+      body: updateData
     });
     successMessage.value = 'User updated successfully!';
   } catch (err) {

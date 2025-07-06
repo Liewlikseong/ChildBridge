@@ -88,49 +88,62 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input
-              type="tel"
-              v-model="formData.phone"
+            <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+            <select
+              v-model="formData.gender"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              required
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Birth Date</label>
+            <input
+              type="date"
+              v-model="formData.birthDate"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
+            <input
+              type="text"
+              v-model="formData.occupation"
+              placeholder="e.g., Software Engineer, Teacher, Student"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         </div>
       </div>
 
-      <!-- Address Section -->
+      <!-- Change Password Section -->
       <div class="bg-white rounded-xl shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Address</h2>
-        <div class="grid grid-cols-2 gap-4">
+        <h2 class="text-lg font-semibold mb-4">Change Password</h2>
+        <form @submit.prevent="changePassword" class="space-y-4 max-w-md">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
-            <input
-              type="text"
-              v-model="formData.country"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              required
-            />
+            <label for="currentPassword" class="block text-sm font-medium text-gray-700">Current Password</label>
+            <input type="password" v-model="currentPassword" id="currentPassword" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-            <input
-              type="text"
-              v-model="formData.city"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              required
-            />
+            <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
+            <input type="password" v-model="newPassword" id="newPassword" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
-            <input
-              type="text"
-              v-model="formData.state"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              required
-            />
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+            <input type="password" v-model="confirmPassword" id="confirmPassword" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
           </div>
-        </div>
+          <div class="flex items-center space-x-2">
+            <button type="submit" :disabled="changingPassword" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-gray-400">
+              {{ changingPassword ? 'Changing...' : 'Change Password' }}
+            </button>
+            <span v-if="passwordSuccess" class="text-green-600 text-sm">{{ passwordSuccess }}</span>
+            <span v-if="passwordError" class="text-red-600 text-sm">{{ passwordError }}</span>
+          </div>
+        </form>
       </div>
 
       <!-- Action Buttons -->
@@ -176,16 +189,21 @@ const error = ref('');
 const avatarPreview = ref(null);
 const avatarUploadProgress = ref(0);
 const hasImageError = ref(false);
+const currentPassword = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const changingPassword = ref(false);
+const passwordError = ref('');
+const passwordSuccess = ref('');
 const { profile, loading, fetchProfile, updateProfile } = useProfile();
 
 const formData = ref({
   firstName: '',
   lastName: '',
   email: '',
-  phone: '',
-  country: '',
-  city: '',
-  state: '',
+  gender: '',
+  birthDate: '',
+  occupation: '',
   avatarUrl: ''
 });
 
@@ -200,19 +218,18 @@ const navigateBack = () => {
 // Load user data on mount
 onMounted(async () => {
   try {
-    const { profile: userData } = await fetchProfile();
+    await fetchProfile();
+    const userData = profile.value;
     if (userData) {
       formData.value = {
         firstName: userData.first_name || '',
         lastName: userData.last_name || '',
         email: userData.email || '',
-        phone: userData.phone || '',
-        country: userData.country || '',
-        city: userData.city || '',
-        state: userData.state || '',
+        gender: userData.gender || '',
+        birthDate: userData.birth_date || '',
+        occupation: userData.occupation || '',
         avatarUrl: userData.avatar_url || ''
       };
-
       if (userData.avatar_url) {
         avatarPreview.value = userData.avatar_url;
       }
@@ -295,6 +312,50 @@ const removeAvatar = () => {
   }
 };
 
+const changePassword = async () => {
+  passwordError.value = '';
+  passwordSuccess.value = '';
+  if (!currentPassword.value || !newPassword.value || !confirmPassword.value) {
+    passwordError.value = 'All fields are required.';
+    return;
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = 'New passwords do not match.';
+    return;
+  }
+  if (newPassword.value.length < 6) {
+    passwordError.value = 'New password must be at least 6 characters.';
+    return;
+  }
+  changingPassword.value = true;
+  try {
+    // Re-authenticate user
+    const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
+      email: profile.value.email,
+      password: currentPassword.value
+    });
+    if (signInError || !session) {
+      passwordError.value = 'Current password is incorrect.';
+      changingPassword.value = false;
+      return;
+    }
+    // Update password
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword.value });
+    if (updateError) {
+      passwordError.value = updateError.message || 'Failed to change password.';
+    } else {
+      passwordSuccess.value = 'Password changed successfully!';
+      currentPassword.value = '';
+      newPassword.value = '';
+      confirmPassword.value = '';
+    }
+  } catch (err) {
+    passwordError.value = err.message || 'Failed to change password.';
+  } finally {
+    changingPassword.value = false;
+  }
+};
+
 const saveChanges = async () => {
   isSaving.value = true;
   error.value = '';
@@ -304,10 +365,9 @@ const saveChanges = async () => {
       first_name: formData.value.firstName?.trim(),
       last_name: formData.value.lastName?.trim(),
       email: formData.value.email?.trim(),
-      phone: formData.value.phone?.trim(),
-      country: formData.value.country?.trim(),
-      city: formData.value.city?.trim(),
-      state: formData.value.state?.trim(),
+      gender: formData.value.gender?.trim(),
+      birth_date: formData.value.birthDate?.trim(),
+      occupation: formData.value.occupation?.trim(),
       avatar_url: formData.value.avatarUrl,
       updated_at: new Date().toISOString()
     };

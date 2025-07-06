@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const { id } = event.context.params;
   const body = await readBody(event);
-  const { email, firstName, lastName, role } = body;
+  const { email, firstName, lastName, role, gender, birthDate, occupation } = body;
 
   if (!user) {
     throw createError({ statusCode: 401, statusMessage: 'Authentication required.' });
@@ -26,9 +26,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing or invalid fields.' });
   }
 
+  const updateData = {
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    role,
+    gender: gender || null,
+    birth_date: birthDate || null,
+    occupation: occupation || null,
+    updated_at: new Date().toISOString()
+  };
+
   const { error: updateError } = await supabaseAdmin
     .from('profiles')
-    .update({ email, first_name: firstName, last_name: lastName, role })
+    .update(updateData)
     .eq('id', id);
 
   if (updateError) {
