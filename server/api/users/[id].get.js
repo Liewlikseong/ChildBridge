@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: target, error: targetError } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, first_name, last_name, role')
+    .select('id, email, first_name, last_name, role, gender, birth_date, occupation')
     .eq('id', id)
     .single();
 
