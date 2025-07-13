@@ -3,16 +3,32 @@ import Stripe from 'stripe';
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { amount, currency = 'myr', category, message, event_id, payment_method_id } = body;
+    const { 
+      amount, 
+      currency = 'myr', 
+      category, 
+      message, 
+      event_id, 
+      payment_method_id,
+      order_items = [],
+      customer_info
+    } = body;
 
-    console.log('=== API ROUTE DEBUG START ===');
+    console.log('=== ENHANCED API ROUTE DEBUG START ===');
     console.log('Request body:', body);
 
     // Validate required fields
     if (!amount || amount <= 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Invalid donation amount'
+        statusMessage: 'Invalid amount'
+      });
+    }
+
+    if (!customer_info?.firstName || !customer_info?.lastName || !customer_info?.email) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Customer information is required'
       });
     }
 
@@ -22,11 +38,11 @@ export default defineEventHandler(async (event) => {
     if (amountInSen < 50) { // Minimum 50 sen (RM0.50) for Stripe
       throw createError({
         statusCode: 400,
-        statusMessage: 'Minimum donation amount is RM0.50'
+        statusMessage: 'Minimum amount is RM0.50'
       });
     }
 
-    // Initialize Stripe FIRST - this is critical
+    // Initialize Stripe
     const config = useRuntimeConfig();
     const stripeSecretKey = config.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
     
@@ -53,7 +69,7 @@ export default defineEventHandler(async (event) => {
       
       const { createClient } = await import('@supabase/supabase-js');
       const supabaseUrl = config.public.supabaseUrl || process.env.SUPABASE_URL;
-      const supabaseKey = config.supabaseServiceKey || process.env.SUPABASE_KEY || process.env.SUPABASE_KEY;
+      const supabaseKey = config.supabaseServiceKey || process.env.SUPABASE_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
         throw createError({
@@ -76,6 +92,31 @@ export default defineEventHandler(async (event) => {
       console.log('No user authentication available');
     }
 
+    // Determine order type based on items
+    const hasProducts = order_items.some(item => item.product_id);
+    const hasDonations = order_items.some(item => !item.product_id);
+    let orderType = 'donation';
+    
+    if (hasProducts && hasDonations) {
+      orderType = 'mixed';
+    } else if (hasProducts) {
+      orderType = 'purchase';
+    }
+
+    // Create description based on order type and items
+    let description = '';
+    if (orderType === 'donation') {
+      description = `Donation of RM${amountInMYR} to Jing Sun Welfare Society`;
+    } else if (orderType === 'purchase') {
+      const productNames = order_items
+        .filter(item => item.product_id)
+        .map(item => `${item.product_name} (x${item.quantity})`)
+        .join(', ');
+      description = `Purchase: ${productNames} - Total: RM${amountInMYR}`;
+    } else {
+      description = `Mixed order (products & donation) - Total: RM${amountInMYR}`;
+    }
+
     // Prepare Payment Intent data
     const paymentIntentData = {
       amount: amountInSen,
@@ -85,30 +126,36 @@ export default defineEventHandler(async (event) => {
       },
       metadata: {
         donor_id: user?.id?.toString() || 'anonymous',
+        customer_email: customer_info.email,
+        customer_name: `${customer_info.firstName} ${customer_info.lastName}`,
         category: category || 'general',
         type: 'onetime',
-        amount_myr: amountInMYR.toString()
+        order_type: orderType,
+        event_id: event_id?.toString() || '',
+        amount_myr: amountInMYR.toString(),
+        total_items: order_items.length.toString()
       },
-      description: `Donation of RM${amountInMYR} to Jing Sun Welfare Society - ${category || 'General Fund'}`,
+      description: description,
+      receipt_email: customer_info.email,
     };
 
     console.log(`Creating payment intent for RM${amountInMYR} (${amountInSen} sen)`);
+    console.log('Order type:', orderType);
+    console.log('Items:', order_items.length);
 
     // Try immediate confirmation if payment method is provided
     let paymentIntent;
-    let initialStatus = 'completed'; 
+    let initialStatus = 'pending';
     let requiresAction = false;
     
     if (payment_method_id) {
       console.log('🔄 Attempting immediate confirmation with payment method:', payment_method_id);
       
-      // Add payment method and confirmation to the payment intent
       paymentIntentData.payment_method = payment_method_id;
       paymentIntentData.confirm = true;
       
-      // Add return URL for 3D Secure or other authentication methods
       const origin = getHeader(event, 'origin') || getHeader(event, 'host') || 'http://localhost:3000';
-      paymentIntentData.return_url = `${origin}/donation-success`;
+      paymentIntentData.return_url = `${origin}/payment-success`;
       
       try {
         paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
@@ -147,7 +194,6 @@ export default defineEventHandler(async (event) => {
         console.log('⚠️ Immediate confirmation failed:', confirmError.message);
         console.log('Falling back to regular payment intent creation...');
         
-        // Remove confirmation parameters and create regular payment intent
         delete paymentIntentData.payment_method;
         delete paymentIntentData.confirm;
         delete paymentIntentData.return_url;
@@ -164,13 +210,15 @@ export default defineEventHandler(async (event) => {
         }
       }
     } else {
-      // No payment method provided, create regular payment intent
       console.log('💳 Creating regular payment intent (no payment method provided)');
       paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
       console.log('✅ Payment intent created:', paymentIntent.id);
     }
 
-    // Create donation record with the determined status
+    // Start database transaction
+    console.log('📝 Creating database records...');
+
+    // Create donation/order record
     const donationRecord = {
       donor_id: user?.id || null,
       event_id: event_id || null,
@@ -179,15 +227,17 @@ export default defineEventHandler(async (event) => {
       currency: 'myr',
       category: category || 'general',
       type: 'onetime',
-      status: initialStatus, // Use the determined status instead of hardcoded 'pending'
+      order_type: orderType,
+      total_items: order_items.length,
+      status: initialStatus,
       message: message || null,
       stripe_payment_intent_id: paymentIntent.id,
+      stripe_customer_id: null, // Will be updated if customer is created
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     console.log('Inserting donation record with status:', initialStatus);
-    console.log('Donation record:', donationRecord);
 
     const { data: donation, error: donationError } = await supabase
       .from('donations')
@@ -198,7 +248,7 @@ export default defineEventHandler(async (event) => {
     if (donationError) {
       console.error('❌ Database insert error:', donationError);
       
-      // If database fails, try to cancel the payment intent (only if it's not succeeded)
+      // Cancel payment intent if database fails
       if (paymentIntent.status !== 'succeeded') {
         try {
           await stripe.paymentIntents.cancel(paymentIntent.id);
@@ -215,7 +265,93 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('✅ Donation record created:', donation.id);
-    console.log('=== API ROUTE DEBUG END ===');
+
+    // Create order items if any
+    if (order_items.length > 0) {
+      console.log('📦 Creating order items...');
+      
+      const orderItemsData = order_items.map(item => ({
+        donation_id: donation.id,
+        product_id: item.product_id || null,
+        product_name: item.product_name,
+        product_price: parseFloat(item.product_price),
+        quantity: parseInt(item.quantity) || 1,
+        total_amount: parseFloat(item.total_amount),
+        created_at: new Date().toISOString()
+      }));
+
+      const { data: createdOrderItems, error: orderItemsError } = await supabase
+        .from('order_items')
+        .insert(orderItemsData)
+        .select();
+
+      if (orderItemsError) {
+        console.error('❌ Order items insert error:', orderItemsError);
+        
+        // Rollback: delete the donation record
+        await supabase.from('donations').delete().eq('id', donation.id);
+        
+        // Cancel payment intent if not succeeded
+        if (paymentIntent.status !== 'succeeded') {
+          try {
+            await stripe.paymentIntents.cancel(paymentIntent.id);
+          } catch (cancelError) {
+            console.error('Failed to cancel payment intent:', cancelError);
+          }
+        }
+        
+        throw createError({
+          statusCode: 500,
+          statusMessage: `Order items creation failed: ${orderItemsError.message}`
+        });
+      }
+
+      console.log('✅ Order items created:', createdOrderItems.length);
+
+      // Update product stock quantities if this is a purchase
+      if (orderType === 'purchase' || orderType === 'mixed') {
+        console.log('📦 Updating product stock...');
+        
+        const productUpdates = order_items
+          .filter(item => item.product_id)
+          .map(async (item) => {
+            // Get current stock
+            const { data: product, error: fetchError } = await supabase
+              .from('products')
+              .select('stock_quantity')
+              .eq('id', item.product_id)
+              .single();
+
+            if (fetchError || !product) {
+              console.warn(`Could not fetch product ${item.product_id} for stock update`);
+              return;
+            }
+
+            // Only update if stock is tracked (not null)
+            if (product.stock_quantity !== null) {
+              const newStock = Math.max(0, product.stock_quantity - item.quantity);
+              
+              const { error: updateError } = await supabase
+                .from('products')
+                .update({ 
+                  stock_quantity: newStock,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', item.product_id);
+
+              if (updateError) {
+                console.warn(`Failed to update stock for product ${item.product_id}:`, updateError);
+              } else {
+                console.log(`✅ Updated stock for ${item.product_name}: ${product.stock_quantity} → ${newStock}`);
+              }
+            }
+          });
+
+        await Promise.all(productUpdates);
+      }
+    }
+
+    console.log('=== ENHANCED API ROUTE DEBUG END ===');
 
     // Return comprehensive response
     const response = {
@@ -224,10 +360,11 @@ export default defineEventHandler(async (event) => {
       amount: amountInMYR,
       currency: 'myr',
       status: initialStatus,
+      order_type: orderType,
+      total_items: order_items.length,
       payment_intent_id: paymentIntent.id,
       payment_intent_status: paymentIntent.status,
       requires_action: requiresAction,
-      // Include next steps information
       next_action: paymentIntent.next_action || null
     };
 
@@ -251,4 +388,4 @@ export default defineEventHandler(async (event) => {
       statusMessage: `API Error: ${error.message}`
     });
   }
-})
+});
