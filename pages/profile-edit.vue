@@ -88,6 +88,59 @@
             />
           </div>
           <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+            <div class="relative">
+              <div class="flex">
+                <!-- Country Code Selector -->
+                <select
+                  v-model="selectedCountryCode"
+                  class="px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-gray-50 text-sm"
+                  style="min-width: 100px;"
+                >
+                  <option v-for="country in popularCountries" :key="country.code" :value="country.code">
+                    {{ country.flag }} {{ country.code }}
+                  </option>
+                </select>
+                <!-- Phone Number Input -->
+                <input
+                  type="tel"
+                  v-model="phoneNumberWithoutCode"
+                  class="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  :placeholder="getPlaceholderForCountry(selectedCountryCode)"
+                  @input="formatPhoneNumberInput"
+                />
+              </div>
+              <!-- Verification Status & Button -->
+              <div v-if="formData.phoneNumber" class="mt-2 flex items-center justify-between">
+                <div class="flex items-center">
+                  <div v-if="profile?.phone_verified" class="flex items-center text-green-600 text-sm">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Verified
+                  </div>
+                  <div v-else class="flex items-center text-amber-600 text-sm">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    Not verified
+                  </div>
+                </div>
+                <button
+                  v-if="!profile?.phone_verified && isValidPhoneNumber(formData.phoneNumber)"
+                  type="button"
+                  @click="verifyPhone"
+                  class="text-sm text-primary-600 hover:text-primary-700 font-medium border border-primary-200 px-3 py-1 rounded-md hover:bg-primary-50 transition-colors"
+                >
+                  Verify Now
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Select your country and enter your phone number
+            </p>
+          </div>
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
             <select
               v-model="formData.gender"
@@ -108,7 +161,7 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
-          <div>
+          <div class="col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
             <input
               type="text"
@@ -173,8 +226,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useSupabaseClient, useRouter } from '#imports';
+import { ref, onMounted, watch } from 'vue'; // ✅ Import watch here
+import { useSupabaseClient, useRouter, navigateTo } from '#imports'; // ✅ Add navigateTo import
 import { v4 as uuidv4 } from 'uuid';
 import { useProfile } from '~/composables/useProfile';
 
@@ -201,11 +254,40 @@ const formData = ref({
   firstName: '',
   lastName: '',
   email: '',
+  phoneNumber: '',
   gender: '',
   birthDate: '',
   occupation: '',
   avatarUrl: ''
 });
+
+// Phone number state
+const selectedCountryCode = ref('+60'); // Default to Malaysia
+const phoneNumberWithoutCode = ref('');
+
+// Popular countries for the dropdown
+const popularCountries = [
+  { code: '+60', name: 'Malaysia', flag: '🇲🇾' },
+  { code: '+65', name: 'Singapore', flag: '🇸🇬' },
+  { code: '+1', name: 'United States', flag: '🇺🇸' },
+  { code: '+44', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: '+86', name: 'China', flag: '🇨🇳' },
+  { code: '+91', name: 'India', flag: '🇮🇳' },
+  { code: '+81', name: 'Japan', flag: '🇯🇵' },
+  { code: '+82', name: 'South Korea', flag: '🇰🇷' },
+  { code: '+61', name: 'Australia', flag: '🇦🇺' },
+  { code: '+49', name: 'Germany', flag: '🇩🇪' },
+  { code: '+33', name: 'France', flag: '🇫🇷' },
+  { code: '+39', name: 'Italy', flag: '🇮🇹' },
+  { code: '+34', name: 'Spain', flag: '🇪🇸' },
+  { code: '+31', name: 'Netherlands', flag: '🇳🇱' },
+  { code: '+41', name: 'Switzerland', flag: '🇨🇭' },
+  { code: '+46', name: 'Sweden', flag: '🇸🇪' },
+  { code: '+47', name: 'Norway', flag: '🇳🇴' },
+  { code: '+45', name: 'Denmark', flag: '🇩🇰' },
+  { code: '+852', name: 'Hong Kong', flag: '🇭🇰' },
+  { code: '+886', name: 'Taiwan', flag: '🇹🇼' }
+];
 
 const handleImageError = () => {
   hasImageError.value = true;
@@ -213,6 +295,88 @@ const handleImageError = () => {
 
 const navigateBack = () => {
   router.push('/profile');
+};
+
+// Phone number formatting functions
+const getPlaceholderForCountry = (countryCode) => {
+  const placeholders = {
+    '+60': '123456789',
+    '+65': '12345678',
+    '+1': '2345678901',
+    '+44': '7123456789',
+    '+86': '13123456789',
+    '+91': '9876543210',
+    '+81': '9012345678',
+    '+82': '1012345678',
+    '+61': '412345678',
+    '+49': '15123456789',
+    '+33': '612345678',
+    '+39': '3123456789',
+    '+34': '612345678',
+    '+31': '612345678',
+    '+41': '791234567',
+    '+46': '701234567',
+    '+47': '40123456',
+    '+45': '20123456',
+    '+852': '91234567',
+    '+886': '912345678'
+  };
+  return placeholders[countryCode] || '123456789';
+};
+
+const formatPhoneNumberInput = () => {
+  // Remove any non-digit characters
+  phoneNumberWithoutCode.value = phoneNumberWithoutCode.value.replace(/\D/g, '');
+  
+  // Update the complete phone number
+  updateCompletePhoneNumber();
+};
+
+const updateCompletePhoneNumber = () => {
+  if (phoneNumberWithoutCode.value) {
+    formData.value.phoneNumber = selectedCountryCode.value + phoneNumberWithoutCode.value;
+  } else {
+    formData.value.phoneNumber = '';
+  }
+};
+
+// Watch for country code changes - ✅ Now using proper ES import
+watch(selectedCountryCode, () => {
+  updateCompletePhoneNumber();
+});
+
+// Parse existing phone number when loading profile
+const parseExistingPhoneNumber = (fullPhoneNumber) => {
+  if (!fullPhoneNumber) return;
+  
+  // Find matching country code
+  const matchingCountry = popularCountries.find(country => 
+    fullPhoneNumber.startsWith(country.code)
+  );
+  
+  if (matchingCountry) {
+    selectedCountryCode.value = matchingCountry.code;
+    phoneNumberWithoutCode.value = fullPhoneNumber.substring(matchingCountry.code.length);
+  } else {
+    // Fallback: try to extract country code
+    const match = fullPhoneNumber.match(/^(\+\d{1,4})(.*)$/);
+    if (match) {
+      selectedCountryCode.value = match[1];
+      phoneNumberWithoutCode.value = match[2];
+    } else {
+      // If no country code found, assume it's Malaysia and add +60
+      selectedCountryCode.value = '+60';
+      phoneNumberWithoutCode.value = fullPhoneNumber.replace(/^\+?60?/, '');
+    }
+  }
+};
+
+// Validate phone number format
+const isValidPhoneNumber = (phone) => {
+  if (!phone) return true; // Optional field
+  // E.164 format: +[1-9]\d{1,14}
+  const phoneRegex = /^\+[1-9]\d{1,14}$/;
+  return phoneRegex.test(phone);
 };
 
 // Load user data on mount
@@ -225,11 +389,18 @@ onMounted(async () => {
         firstName: userData.first_name || '',
         lastName: userData.last_name || '',
         email: userData.email || '',
+        phoneNumber: userData.phone_number || '',
         gender: userData.gender || '',
         birthDate: userData.birth_date || '',
         occupation: userData.occupation || '',
         avatarUrl: userData.avatar_url || ''
       };
+      
+      // Parse existing phone number
+      if (userData.phone_number) {
+        parseExistingPhoneNumber(userData.phone_number);
+      }
+      
       if (userData.avatar_url) {
         avatarPreview.value = userData.avatar_url;
       }
@@ -356,7 +527,26 @@ const changePassword = async () => {
   }
 };
 
+// Verify phone number
+const verifyPhone = () => {
+  if (!isValidPhoneNumber(formData.value.phoneNumber)) {
+    error.value = 'Please enter a valid phone number before verification';
+    return;
+  }
+  
+  const params = new URLSearchParams({
+    phone: formData.value.phoneNumber
+  });
+  navigateTo(`/auth/verify-phone?${params.toString()}`);
+};
+
 const saveChanges = async () => {
+  // Validate phone number format if provided
+  if (formData.value.phoneNumber && !isValidPhoneNumber(formData.value.phoneNumber)) {
+    error.value = 'Please enter a valid phone number in international format (e.g., +60123456789)';
+    return;
+  }
+
   isSaving.value = true;
   error.value = '';
 
@@ -365,6 +555,7 @@ const saveChanges = async () => {
       first_name: formData.value.firstName?.trim(),
       last_name: formData.value.lastName?.trim(),
       email: formData.value.email?.trim(),
+      phone_number: formData.value.phoneNumber?.trim() || null,
       gender: formData.value.gender?.trim(),
       birth_date: formData.value.birthDate?.trim(),
       occupation: formData.value.occupation?.trim(),
@@ -384,4 +575,4 @@ const saveChanges = async () => {
     isSaving.value = false;
   }
 };
-</script> 
+</script>

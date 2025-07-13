@@ -1,11 +1,13 @@
+<!-- events/[id].vue - Updated Event Detail Page -->
 <template>
   <div>
     <div v-if="loading" class="py-16 text-center">
       <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent mx-auto"></div>
+      <p class="mt-4 text-gray-600">Loading event...</p>
     </div>
 
     <div v-else-if="event" class="bg-white min-h-screen">
-      <!--style container -->
+      <!-- Mobile container -->
       <div class="max-w-xl mx-auto bg-white border-x border-neutral-200 min-h-screen">
         
         <!-- Header -->
@@ -37,11 +39,11 @@
           </div>
         </div>
 
-        <!-- Media Section-->
+        <!-- Media Section -->
         <div class="relative">
           <!-- Multiple Media Display -->
           <div v-if="event.media_files && event.media_files.length > 0" class="relative">
-            <!-- Main Media Display - Slightly bigger -->
+            <!-- Main Media Display -->
             <div class="relative bg-black">
               <img 
                 v-if="currentMedia.type === 'image'"
@@ -63,13 +65,14 @@
                 <div
                   v-for="(media, index) in event.media_files"
                   :key="index"
-                  class="w-2 h-2 rounded-full transition-all"
+                  class="w-2 h-2 rounded-full transition-all cursor-pointer"
                   :class="currentMediaIndex === index ? 'bg-white' : 'bg-white/50'"
+                  @click="currentMediaIndex = index"
                 ></div>
               </div>
             </div>
             
-            <!-- Arrow Navigation-->
+            <!-- Arrow Navigation -->
             <div v-if="event.media_files.length > 1" class="absolute inset-y-0 left-0 flex items-center">
               <button
                 @click="previousMedia"
@@ -161,10 +164,67 @@
             <div class="text-sm leading-relaxed whitespace-pre-wrap text-neutral-800">{{ event.content }}</div>
           </div>
 
+          <!-- Products Section for Selling Events -->
+          <div v-if="event.event_type === 'selling' && event.products && event.products.length > 0" class="mt-6">
+            <h3 class="text-lg font-semibold mb-4">Available Products</h3>
+            <div class="grid grid-cols-1 gap-4">
+              <div 
+                v-for="product in event.products" 
+                :key="product.id"
+                class="border rounded-lg p-4 flex items-center space-x-4"
+              >
+                <div class="w-16 h-16 flex-shrink-0">
+                  <img 
+                    v-if="product.image_url"
+                    :src="product.image_url" 
+                    :alt="product.name"
+                    class="w-full h-full object-cover rounded-lg"
+                  />
+                  <div v-else class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-medium text-gray-900">{{ product.name }}</h4>
+                  <p v-if="product.description" class="text-sm text-gray-600 mt-1">{{ product.description }}</p>
+                  <div class="flex items-center justify-between mt-2">
+                    <span class="text-lg font-semibold text-primary-600">RM{{ product.price.toFixed(2) }}</span>
+                    <div class="text-sm text-gray-500">
+                      <span v-if="product.stock_quantity">Stock: {{ product.stock_quantity }}</span>
+                      <span v-else>Unlimited</span>
+                      <span v-if="!product.available" class="ml-2 text-red-500">Out of Stock</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Action Buttons -->
           <div class="mt-6 space-y-3">
-            <!-- Donation/Selling Events -->
-            <div v-if="isDonationOrSelling(event.event_type)">
+            <!-- Selling Events -->
+            <div v-if="event.event_type === 'selling'">
+              <button
+                @click="proceedToPayment(event)"
+                :disabled="getEventStatus(event) === 'past'"
+                :class="[
+                  'w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center',
+                  getEventStatus(event) === 'past' 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                ]"
+              >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                {{ getEventStatus(event) === 'past' ? 'Event Ended' : 'Shop Now' }}
+              </button>
+            </div>
+
+            <!-- Donation/Fundraising Events -->
+            <div v-else-if="isDonationOrSelling(event.event_type)">
               <button
                 @click="proceedToPayment(event)"
                 :disabled="getEventStatus(event) === 'past'"
@@ -175,7 +235,7 @@
                     : 'bg-primary-600 text-white hover:bg-primary-700'
                 ]"
               >
-                {{ event.event_type === 'donation' ? 'Donate Now' : 'Buy Now' }}
+                {{ event.event_type === 'donation' ? 'Donate Now' : 'Support Now' }}
               </button>
             </div>
 
@@ -203,7 +263,7 @@
           </div>
         </div>
 
-        <!-- Media Carousel-->
+        <!-- Media Carousel for Multiple Files -->
         <div v-if="event.media_files && event.media_files.length > 1" class="px-4 pb-4">
           <div class="flex space-x-2 overflow-x-auto scrollbar-hide">
             <div
@@ -237,7 +297,17 @@
     </div>
 
     <div v-else class="py-16 text-center">
-      <p class="text-neutral-600">Event not found.</p>
+      <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <h3 class="text-lg font-semibold text-gray-600 mb-2">Event Not Found</h3>
+      <p class="text-gray-500 mb-4">The event you're looking for doesn't exist or has been removed.</p>
+      <button 
+        @click="$router.back()" 
+        class="btn btn-primary"
+      >
+        Go Back
+      </button>
     </div>
   </div>
 </template>
@@ -262,7 +332,7 @@ const currentMedia = computed(() => {
   if (event.value?.media_files && event.value.media_files.length > 0) {
     return event.value.media_files[currentMediaIndex.value] || event.value.media_files[0];
   }
-  return null;
+  return { type: 'image', url: event.value?.poster_url || '' };
 });
 
 // Check if event type is donation or selling
@@ -310,7 +380,6 @@ const formatDate = (dateString) => {
   const now = new Date();
   const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
   
-  
   if (diffInHours < 1) {
     return 'Just now';
   } else if (diffInHours < 24) {
@@ -336,13 +405,13 @@ const proceedToPayment = (event) => {
     currency: 'myr'
   });
   
-  navigateTo(`/payment?${params.toString()}`);
+  navigateTo(`/events/payment?${params.toString()}`);
 };
 
 // Apply to volunteer
 const applyToVolunteer = async (event) => {
   if (!user.value) {
-    navigateTo('/login?redirect=' + encodeURIComponent(`/events/${event.id}`));
+    navigateTo('/auth/login?redirect=' + encodeURIComponent(`/events/${event.id}`));
     return;
   }
 
@@ -412,19 +481,30 @@ const fetchUserVolunteerApplications = async () => {
   }
 };
 
-// Fetch event and author details
+// Fetch event and author details with products
 const fetchEvent = async () => {
   try {
     const { data, error } = await supabase
       .from('events')
-      .select('*')
+      .select(`
+        *,
+        products (
+          id,
+          name,
+          description,
+          price,
+          image_url,
+          stock_quantity,
+          available
+        )
+      `)
       .eq('id', route.params.id)
       .single();
 
     if (error) throw error;
     event.value = data;
 
-    // Fetch author details - check both old and new field names
+    // Fetch author details
     const authorId = data.staff_id || data.author_id || data.created_by;
     if (authorId) {
       const { data: authorData, error: authorError } = await supabase
@@ -464,7 +544,7 @@ const editEvent = () => {
 };
 
 const deleteEvent = async () => {
-  if (!confirm('Are you sure you want to delete this event?')) return;
+  if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
 
   try {
     // Delete media files from storage
@@ -473,7 +553,7 @@ const deleteEvent = async () => {
     // Handle poster_url
     if (event.value?.poster_url) {
       const posterPath = event.value.poster_url.split('/').pop();
-      filesToDelete.push(`events/${posterPath}`);
+      if (posterPath) filesToDelete.push(`events/${posterPath}`);
     }
     
     // Handle multiple media format
@@ -481,16 +561,46 @@ const deleteEvent = async () => {
       event.value.media_files.forEach(mediaFile => {
         if (mediaFile.url) {
           const mediaPath = mediaFile.url.split('/').pop();
-          filesToDelete.push(`events/${mediaPath}`);
+          if (mediaPath) filesToDelete.push(`events/${mediaPath}`);
         }
       });
     }
+
+    // Handle product images
+    if (event.value?.products && Array.isArray(event.value.products)) {
+      event.value.products.forEach(product => {
+        if (product.image_url) {
+          const imagePath = product.image_url.split('/').pop();
+          if (imagePath) filesToDelete.push(`products/${imagePath}`);
+        }
+      });
+    }
+
+    // Delete volunteer applications first
+    const { error: volunteerDeleteError } = await supabase
+      .from('volunteer')
+      .delete()
+      .eq('event_id', route.params.id);
+
+    if (volunteerDeleteError) throw volunteerDeleteError;
+
+    // Delete products
+    const { error: productsDeleteError } = await supabase
+      .from('products')
+      .delete()
+      .eq('event_id', route.params.id);
+
+    if (productsDeleteError) throw productsDeleteError;
     
     // Delete files from storage if any exist
     if (filesToDelete.length > 0) {
-      await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('media')
         .remove(filesToDelete);
+      
+      if (storageError) {
+        console.warn('Some files could not be deleted from storage:', storageError);
+      }
     }
 
     const { error } = await supabase

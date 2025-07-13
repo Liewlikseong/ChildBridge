@@ -141,23 +141,22 @@ const { profile, fetchProfile } = useProfile();
 const mobileMenuOpen = ref(false);
 const userMenuOpen = ref(false);
 const userMenuContainer = ref(null);
-const userProfile = ref(null);
 const imageError = ref(false);
 
-// Computed properties for user display
+// Computed properties for user display - now using the profile from useProfile composable
 const userName = computed(() => {
   if (!user.value) return '';
   
-  // Try to get name from various sources
-  const metadata = user.value.user_metadata || {};
-  const profile = userProfile.value || {};
+  // Use the profile from useProfile composable first
+  if (profile.value && profile.value.first_name && profile.value.last_name) {
+    return `${profile.value.first_name} ${profile.value.last_name}`;
+  } else if (profile.value && profile.value.first_name) {
+    return profile.value.first_name;
+  }
   
-  // Priority: profile first_name + last_name > metadata full_name > metadata name > email
-  if (profile.first_name && profile.last_name) {
-    return `${profile.first_name} ${profile.last_name}`;
-  } else if (profile.first_name) {
-    return profile.first_name;
-  } else if (metadata.full_name) {
+  // Fallback to user metadata
+  const metadata = user.value.user_metadata || {};
+  if (metadata.full_name) {
     return metadata.full_name;
   } else if (metadata.name) {
     return metadata.name;
@@ -168,14 +167,16 @@ const userName = computed(() => {
 
 const userAvatar = computed(() => {
   if (imageError.value) return null;
-  
   if (!user.value) return null;
   
-  const metadata = user.value.user_metadata || {};
-  const profile = userProfile.value || {};
+  // Use the profile from useProfile composable first
+  if (profile.value && profile.value.avatar_url) {
+    return profile.value.avatar_url;
+  }
   
-  // Priority: profile avatar_url > metadata avatar_url > metadata picture
-  return profile.avatar_url || metadata.avatar_url || metadata.picture || null;
+  // Fallback to user metadata
+  const metadata = user.value.user_metadata || {};
+  return metadata.avatar_url || metadata.picture || null;
 });
 
 const userInitials = computed(() => {
@@ -198,38 +199,6 @@ const handleImageError = () => {
   imageError.value = true;
 };
 
-// Fetch user profile data
-const fetchUserProfile = async () => {
-  if (!user.value) return;
-  
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('first_name, last_name, avatar_url')
-      .eq('id', user.value.id);
-    
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return;
-    }
-    
-    // Handle cases where no profile exists or multiple profiles exist
-    if (!data || data.length === 0) {
-      console.warn(`No profile found for user ${user.value.id}`);
-      userProfile.value = null;
-      return;
-    }
-
-    if (data.length > 1) {
-      console.warn(`Multiple profiles found for user ${user.value.id}, using the first one`);
-    }
-
-    userProfile.value = data[0]; // Use the first profile if multiple exist
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-  }
-};
-
 const logout = async () => {
   try {
     const { error } = await supabase.auth.signOut();
@@ -248,14 +217,17 @@ const handleClickOutside = (event) => {
 };
 
 // Watch for user changes and fetch profile
-watch(user, (newUser) => {
+watch(user, async (newUser) => {
   if (newUser) {
-    fetchProfile();
+    await fetchProfile();
     imageError.value = false; // Reset image error state
-  } else {
-    userProfile.value = null;
   }
 }, { immediate: true });
+
+// Watch for profile changes to reset image error
+watch(profile, () => {
+  imageError.value = false;
+});
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
@@ -267,4 +239,4 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
-</script>
+</script> 
