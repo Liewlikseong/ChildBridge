@@ -21,9 +21,13 @@ export default defineEventHandler(async (event) => {
 
     console.log('Authenticated user ID:', user.id)
 
-    // 2. Get subscription ID from URL
+    // 2. Get subscription ID from URL and request body
     const subscriptionId = getRouterParam(event, 'id')
+    const body = await readBody(event)
+    const { immediate = false } = body || {} // Allow immediate cancellation option
+
     console.log('Subscription ID from URL:', subscriptionId)
+    console.log('Immediate cancellation:', immediate)
 
     if (!subscriptionId) {
       throw createError({
@@ -56,10 +60,21 @@ export default defineEventHandler(async (event) => {
 
     console.log('Found subscription:', {
       id: subscription.id,
-      stripe_subscription_id: subscription.stripe_subscription_id
+      stripe_subscription_id: subscription.stripe_subscription_id,
+      current_status: subscription.status
     })
 
-    // 4. Stripe setup
+    // 4. Check if already cancelled
+    if (subscription.status === 'cancelled') {
+      return {
+        success: true,
+        message: 'Subscription is already cancelled',
+        status: 'cancelled',
+        subscription: subscription
+      }
+    }
+
+    // 5. Stripe setup
     const stripeKey = useRuntimeConfig(event).stripeSecretKey
     if (!stripeKey) {
       throw createError({
@@ -70,7 +85,7 @@ export default defineEventHandler(async (event) => {
 
     const stripe = new Stripe(stripeKey)
 
-    // 5. Retrieve subscription from Stripe
+    // 6. Retrieve subscription from Stripe
     let stripeSubscription
     try {
       stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id)
@@ -82,50 +97,108 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 6. Handle already canceled or pending cancel
+    // 7. Handle already canceled in Stripe
     if (stripeSubscription.status === 'canceled') {
+      // Update local database to match Stripe
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionId)
+
+      if (updateError) {
+        console.error('Database update error:', updateError)
+      }
+
       return {
         success: true,
         message: 'Subscription is already cancelled',
-        status: 'canceled'
+        status: 'cancelled'
       }
     }
 
-    if (stripeSubscription.cancel_at_period_end) {
+    // 8. Handle pending cancellation
+    if (stripeSubscription.cancel_at_period_end && !immediate) {
       return {
         success: true,
         message: 'Subscription already set to cancel at end of billing period',
-        cancel_at_period_end: true
+        cancel_at_period_end: true,
+        current_period_end: stripeSubscription.current_period_end
       }
     }
 
-    // 7. Cancel subscription at period end
-    const updatedStripeSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-      cancel_at_period_end: true
-    })
+    let updatedStripeSubscription
+    let updateData = {
+      updated_at: new Date().toISOString()
+    }
 
-    // 8. Update Supabase record
-    const { error: updateError } = await supabase
-      .from('subscriptions')
-      .update({
-        cancel_at_period_end: true,
-        updated_at: new Date().toISOString()
+    // 9. Cancel subscription based on immediate flag
+    if (immediate) {
+      // Cancel immediately
+      updatedStripeSubscription = await stripe.subscriptions.cancel(subscription.stripe_subscription_id)
+      
+      updateData = {
+        ...updateData,
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        cancel_at_period_end: false
+      }
+
+      console.log('Cancelled immediately')
+    } else {
+      // Cancel at period end
+      updatedStripeSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+        cancel_at_period_end: true
       })
+
+      updateData = {
+        ...updateData,
+        cancel_at_period_end: true,
+        // Keep status as active until period ends
+        status: 'active'
+      }
+
+      console.log('Set to cancel at period end')
+    }
+
+    // 10. Update Supabase record
+    const { data: updatedSubscription, error: updateError } = await supabase
+      .from('subscriptions')
+      .update(updateData)
       .eq('id', subscriptionId)
+      .select()
+      .single()
 
     if (updateError) {
+      console.error('Database update error:', updateError)
       throw createError({
         statusCode: 500,
         statusMessage: `Database update failed: ${updateError.message}`
       })
     }
 
-    return {
-      success: true,
-      message: 'Subscription will be cancelled at the end of the current billing period',
-      cancel_at_period_end: true,
-      current_period_end: updatedStripeSubscription.current_period_end
+    // 11. Return appropriate response
+    if (immediate) {
+      return {
+        success: true,
+        message: 'Subscription cancelled immediately',
+        status: 'cancelled',
+        cancelled_at: updatedSubscription.cancelled_at,
+        subscription: updatedSubscription
+      }
+    } else {
+      return {
+        success: true,
+        message: 'Subscription will be cancelled at the end of the current billing period',
+        cancel_at_period_end: true,
+        current_period_end: updatedStripeSubscription.current_period_end,
+        subscription: updatedSubscription
+      }
     }
+
   } catch (error) {
     console.error('=== Cancel Subscription Error ===', error)
 

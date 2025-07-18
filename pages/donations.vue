@@ -1,298 +1,491 @@
-<template>
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Donation History</h1>
-      <p class="text-gray-600">Track your contributions and their impact</p>
+const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', {
+  year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+});
+
+const formatEventDate = (event) => {
+  if (!event) return 'Unknown Date';
+  
+  const startDate = new Date(event.event_startdate);
+  const endDate = new Date(event.event_enddate);
+  
+  const formatOptions = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  };
+  
+  if (startDate.toDateString() === endDate.toDateString()) {
+    return startDate.toLocaleDateString('en-US', formatOptions);
+  } else {
+    return `${startDate.toLocaleDateString('en-US', formatOptions)} - ${endDate.toLocaleDateString('en-US', formatOptions)}`;
+  }
+};<template>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold mb-2">Donation Management</h1>
+        <p class="text-gray-600">View and manage all user donations including event-specific donations</p>
+      </div>
+      <button
+        @click="showAddPhysicalModal = true"
+        class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+      >
+        Add Physical Donation
+      </button>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-lg shadow-sm border">
-        <div class="flex items-center">
-          <div class="p-2 bg-green-100 rounded-lg">
-            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Total Donated</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary.totalDonated }}</p>
-          </div>
-        </div>
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-2xl font-bold text-gray-900">{{ stats.totalDonations }}</div>
+        <div class="text-sm text-gray-600">Total Donations</div>
       </div>
-      
-      <div class="bg-white p-6 rounded-lg shadow-sm border">
-        <div class="flex items-center">
-          <div class="p-2 bg-blue-100 rounded-lg">
-            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">This Year</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary.thisYear }}</p>
-          </div>
-        </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-2xl font-bold text-gray-900">RM{{ stats.totalAmount.toFixed(2) }}</div>
+        <div class="text-sm text-gray-600">Total Amount</div>
       </div>
-      
-      <div class="bg-white p-6 rounded-lg shadow-sm border">
-        <div class="flex items-center">
-          <div class="p-2 bg-purple-100 rounded-lg">
-            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Total Donations</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary.totalCount }}</p>
-          </div>
-        </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-2xl font-bold text-gray-900">{{ stats.physicalDonations }}</div>
+        <div class="text-sm text-gray-600">Physical Donations</div>
       </div>
-      
-      <div class="bg-white p-6 rounded-lg shadow-sm border">
-        <div class="flex items-center">
-          <div class="p-2 bg-orange-100 rounded-lg">
-            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Active Subscriptions</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary.activeSubscriptions }}</p>
-          </div>
-        </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-2xl font-bold text-gray-900">{{ stats.eventDonations }}</div>
+        <div class="text-sm text-gray-600">Event Donations</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-2xl font-bold text-gray-900">{{ stats.activeDonors }}</div>
+        <div class="text-sm text-gray-600">Active Donors</div>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white p-6 rounded-lg shadow-sm border mb-6">
-      <div class="flex flex-wrap gap-4 items-center">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Type</label>
-          <select v-model="filters.type" @change="fetchDonations" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-            <option value="">All Types</option>
-            <option value="onetime">One-time</option>
-            <option value="subscription">Subscription</option>
-          </select>
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
-          <select v-model="filters.status" @change="fetchDonations" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-            <option value="">All Statuses</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-          </select>
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-          <select v-model="filters.dateRange" @change="fetchDonations" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-            <option value="">All Time</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 3 months</option>
-            <option value="365">Last year</option>
-          </select>
-        </div>
-        
-        <button 
-          @click="resetFilters" 
-          class="mt-6 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50"
+    <div class="bg-white rounded-lg shadow mb-6 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <input
+          v-model="filters.search"
+          type="text"
+          placeholder="Search donations..."
+          class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        />
+        <select v-model="filters.type" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+          <option value="">All Types</option>
+          <option value="onetime">One-time</option>
+          <option value="subscription">Monthly</option>
+          <option value="physical">Physical</option>
+        </select>
+        <select v-model="filters.status" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+          <option value="">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+        </select>
+        <select v-model="filters.eventFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+          <option value="">All Donations</option>
+          <option value="general">General Donations</option>
+          <option value="event">Event Donations</option>
+        </select>
+        <select v-model="filters.dateRange" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+          <option value="">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <button
+          @click="exportToCsv"
+          class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
         >
-          Reset Filters
+          Export CSV
         </button>
       </div>
     </div>
 
-    <!-- Active Subscriptions -->
-    <div v-if="subscriptions.length > 0" class="mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">Active Subscriptions</h2>
-      <div class="space-y-4">
-        <div 
-          v-for="subscription in subscriptions" 
-          :key="subscription.id"
-          class="bg-white p-6 rounded-lg shadow-sm border border-l-4 border-l-green-500"
-        >
-          <div class="flex justify-between items-start">
-            <div>
-              <div class="flex items-center mb-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {{ subscription.status }}
-                </span>
-                <span class="ml-2 text-sm text-gray-500">
-                  Every {{ subscription.interval_count }} {{ subscription.interval_type }}{{ subscription.interval_count > 1 ? 's' : '' }}
-                </span>
-              </div>
-              <h3 class="text-lg font-medium text-gray-900">{{ subscription.amount }} / {{ subscription.interval_type }}</h3>
-              <p class="text-sm text-gray-600 capitalize">{{ subscription.category }}</p>
-            </div>
-            <div class="flex space-x-2">
-              <button 
-                @click="cancelSubscription(subscription.id)"
-                class="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded hover:bg-red-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Donation History Table -->
-    <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-xl font-semibold text-gray-900">Donation History</h2>
-      </div>
-      
-      <div v-if="loading" class="p-6 text-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-        <p class="mt-2 text-gray-500">Loading donations...</p>
-      </div>
-      
-      <div v-else-if="donations.length === 0" class="p-6 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No donations found</h3>
-        <p class="mt-1 text-sm text-gray-500">Start making a difference today!</p>
-        <div class="mt-6">
-          <NuxtLink 
-            to="/donate" 
-            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-          >
-            Make Your First Donation
-          </NuxtLink>
-        </div>
-      </div>
-      
-      <div v-else class="overflow-x-auto">
+    <!-- Donations Table -->
+    <div v-if="pending" class="text-gray-500">Loading donations...</div>
+    <div v-else-if="error" class="text-red-500">Failed to load donations: {{ error.message }}</div>
+    <div v-else class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 250px;">Donor</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 100px;">Type</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 120px;">Amount</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 200px;">Event/Category</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 120px;">Status</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 180px;">Date</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 300px;">Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="donation in donations" :key="donation.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ formatDate(donation.created_at) }}
+            <tr v-for="donation in paginatedDonations" :key="donation.id" class="hover:bg-gray-50">
+              <td class="px-4 py-4" style="min-width: 250px;">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span class="text-sm font-medium text-primary-600">
+                        {{ getDonorInitials(donation) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="ml-4 flex-1">
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ getDonorName(donation) }}
+                    </div>
+                    <div class="text-sm text-gray-500">{{ getDonorEmail(donation) }}</div>
+                  </div>
+                </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {{ donation.amount }}
-                <span class="text-gray-500 text-xs ml-1 uppercase">{{ donation.currency }}</span>
+              <td class="px-4 py-4" style="min-width: 100px;">
+                <span :class="getTypeColor(donation.type)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap">
+                  {{ formatType(donation.type) }}
+                </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                {{ donation.type }}
+              <td class="px-4 py-4 text-sm text-gray-900" style="min-width: 120px;">
+                {{ donation.type === 'physical' ? 'N/A' : `RM${donation.amount.toFixed(2)}` }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                {{ donation.category }}
+              <td class="px-4 py-4 text-sm text-gray-500" style="min-width: 200px;">
+                <!-- Event Information -->
+                <div v-if="donation.event_id && donation.events">
+                  <div class="flex items-center space-x-2">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                      </svg>
+                      Event
+                    </span>
+                  </div>
+                  <div class="mt-1 font-medium text-gray-900 truncate" :title="donation.events.title">
+                    {{ donation.events.title }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ formatEventDate(donation.events) }}
+                  </div>
+                </div>
+                <!-- Regular Category -->
+                <div v-else>
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    General
+                  </span>
+                  <div class="mt-1 text-gray-900 capitalize">
+                    {{ donation.category || 'General' }}
+                  </div>
+                </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span 
-                  class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                  :class="getStatusClass(donation.status)"
-                >
+              <td class="px-4 py-4" style="min-width: 120px;">
+                <span :class="getStatusColor(donation.status)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap">
                   {{ donation.status }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                {{ donation.message || '-' }}
+              <td class="px-4 py-4 text-sm text-gray-500" style="min-width: 180px;">
+                {{ formatDate(donation.created_at) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button 
-                  @click="viewDonationDetails(donation)"
-                  class="text-primary-600 hover:text-primary-900 mr-3"
-                >
-                  View
-                </button>
-                <button 
-                  v-if="donation.status === 'completed'"
-                  @click="downloadReceipt(donation)"
-                  class="text-green-600 hover:text-green-900"
-                >
-                  Receipt
-                </button>
+              <td class="px-4 py-4 text-sm font-medium" style="min-width: 300px;">
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <!-- View Details Button -->
+                  <button 
+                    @click="viewDonationDetails(donation)" 
+                    class="text-primary-600 hover:text-primary-900 whitespace-nowrap"
+                  >
+                    View
+                  </button>
+                  
+                  <!-- View Event Button (for event donations) -->
+                  <NuxtLink
+                    v-if="donation.event_id"
+                    :to="`/events/${donation.event_id}`"
+                    class="text-blue-600 hover:text-blue-900 whitespace-nowrap"
+                    target="_blank"
+                  >
+                    View Event
+                  </NuxtLink>
+                  
+                  <!-- Edit Button - only for physical donations -->
+                  <NuxtLink
+                    v-if="donation.type === 'physical'"
+                    :to="`/staff/edit-donation/${donation.id}`"
+                    class="text-green-600 hover:text-green-900 whitespace-nowrap"
+                  >
+                    Edit
+                  </NuxtLink>
+                  
+                  <!-- Status Update Dropdown -->
+                  <div class="relative inline-block">
+                    <select
+                      :value="donation.status"
+                      @change="updateDonationStatus(donation.id, $event.target.value)"
+                      class="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-primary-500 min-w-[90px]"
+                      :class="getStatusSelectColor(donation.status)"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="completed">Completed</option>
+                      <option value="processing" v-if="donation.type !== 'physical'">Processing</option>
+                      <option value="failed">Failed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Quick Complete Button (for pending items) -->
+                  <button
+                    v-if="donation.status === 'pending'"
+                    @click="updateDonationStatus(donation.id, 'completed')"
+                    class="text-green-600 hover:text-green-900 text-xs font-medium whitespace-nowrap"
+                  >
+                    ✓ Complete
+                  </button>
+                  
+                  <!-- Quick Fail Button (for pending items) -->
+                  <button
+                    v-if="donation.status === 'pending'"
+                    @click="updateDonationStatus(donation.id, 'failed')"
+                    class="text-red-600 hover:text-red-900 text-xs font-medium whitespace-nowrap"
+                  >
+                    ✗ Fail
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      
+
       <!-- Pagination -->
-      <div v-if="pagination.totalPages > 1" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-        <div class="flex-1 flex justify-between sm:hidden">
-          <button 
-            @click="changePage(pagination.currentPage - 1)"
-            :disabled="pagination.currentPage === 1"
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+      <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+        <div class="text-sm text-gray-700">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredDonations.length) }} of {{ filteredDonations.length }} results
+        </div>
+        <div class="flex space-x-2">
+          <button
+            @click="currentPage > 1 && currentPage--"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
           >
             Previous
           </button>
-          <button 
-            @click="changePage(pagination.currentPage + 1)"
-            :disabled="pagination.currentPage === pagination.totalPages"
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          <button
+            @click="currentPage < totalPages && currentPage++"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
           >
             Next
           </button>
         </div>
-        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm text-gray-700">
-              Showing {{ ((pagination.currentPage - 1) * pagination.perPage) + 1 }} to 
-              {{ Math.min(pagination.currentPage * pagination.perPage, pagination.totalCount) }} of 
-              {{ pagination.totalCount }} results
-            </p>
+      </div>
+    </div>
+
+    <!-- Enhanced Add Physical Donation Modal -->
+    <div v-if="showAddPhysicalModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showAddPhysicalModal = false">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Add Physical Donation</h3>
+            <button @click="showAddPhysicalModal = false" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
           </div>
-          <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-              <button 
-                @click="changePage(pagination.currentPage - 1)"
-                :disabled="pagination.currentPage === 1"
-                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          
+          <form @submit.prevent="submitPhysicalDonation" class="space-y-4">
+            <!-- Donor Search/Selection -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Donor</label>
+              <div class="relative">
+                <input
+                  v-model="modalForm.searchQuery"
+                  @input="searchDonors"
+                  type="text"
+                  placeholder="Search by name or email..."
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  :class="{ 'border-red-300': modalForm.errors.donor }"
+                />
+                
+                <!-- Search Results Dropdown -->
+                <div v-if="modalForm.searchResults.length > 0" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  <div
+                    v-for="user in modalForm.searchResults"
+                    :key="user.id"
+                    @click="selectDonor(user)"
+                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  >
+                    <div class="font-medium text-gray-900">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="text-sm text-gray-500">{{ user.email }}</div>
+                  </div>
+                </div>
+                
+                <!-- No Results -->
+                <div v-else-if="modalForm.searchQuery.length > 2 && !modalForm.isSearching && modalForm.searchResults.length === 0" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                  <div class="px-3 py-2 text-gray-500">
+                    No users found. 
+                    <button 
+                      type="button"
+                      @click="modalForm.useManualEntry = true"
+                      class="text-primary-600 hover:text-primary-800 ml-1"
+                    >
+                      Enter manually
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Selected Donor Display -->
+              <div v-if="modalForm.selectedDonor" class="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <div class="font-medium text-green-900">{{ modalForm.selectedDonor.first_name }} {{ modalForm.selectedDonor.last_name }}</div>
+                    <div class="text-sm text-green-700">{{ modalForm.selectedDonor.email }}</div>
+                  </div>
+                  <button 
+                    type="button"
+                    @click="clearDonorSelection"
+                    class="text-green-600 hover:text-green-800"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Manual Entry Fields -->
+              <div v-if="modalForm.useManualEntry && !modalForm.selectedDonor" class="mt-2 space-y-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-sm font-medium text-gray-700">Enter donor details manually:</span>
+                  <button 
+                    type="button"
+                    @click="modalForm.useManualEntry = false"
+                    class="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+                <input
+                  v-model="modalForm.donor_name"
+                  type="text"
+                  placeholder="Full name"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                <input
+                  v-model="modalForm.donor_email"
+                  type="email"
+                  placeholder="Email (optional)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              
+            <!-- Event Selection -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Associated Event (Optional)</label>
+              <select
+                v-model="modalForm.event_id"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                Previous
-              </button>
-              <button 
-                v-for="page in visiblePages"
-                :key="page"
-                @click="changePage(page)"
-                :class="page === pagination.currentPage 
-                  ? 'bg-primary-50 border-primary-500 text-primary-600 z-10' 
-                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
-                class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                <option value="">No specific event (General donation)</option>
+                <option v-for="event in availableEvents" :key="event.id" :value="event.id">
+                  {{ event.title }} - {{ formatEventDate(event) }}
+                </option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">Select an event if this donation is specifically for that event</p>
+            </div>
+
+              <div v-if="modalForm.errors.donor" class="text-red-500 text-sm mt-1">{{ modalForm.errors.donor }}</div>
+            </div>
+
+            <!-- Event Selection -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Associated Event (Optional)</label>
+              <select
+                v-model="modalForm.event_id"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                {{ page }}
-              </button>
-              <button 
-                @click="changePage(pagination.currentPage + 1)"
-                :disabled="pagination.currentPage === pagination.totalPages"
-                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                <option value="">No specific event (General donation)</option>
+                <option v-for="event in availableEvents" :key="event.id" :value="event.id">
+                  {{ event.title }} - {{ formatEventDate(event) }}
+                </option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">Select an event if this donation is specifically for that event</p>
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                v-model="modalForm.category"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                Next
+                <option value="">Select category</option>
+                <option value="general">General</option>
+                <option value="food">Food</option>
+                <option value="clothing">Clothing</option>
+                <option value="books">Books</option>
+                <option value="electronics">Electronics</option>
+                <option value="toys">Toys</option>
+                <option value="household">Household Items</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <!-- Items Description -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Items Description *</label>
+              <textarea
+                v-model="modalForm.message"
+                rows="3"
+                placeholder="Describe the physical items donated..."
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                :class="{ 'border-red-300': modalForm.errors.message }"
+                required
+              ></textarea>
+              <div v-if="modalForm.errors.message" class="text-red-500 text-sm mt-1">{{ modalForm.errors.message }}</div>
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                v-model="modalForm.status"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex space-x-3 pt-4">
+              <button
+                type="submit"
+                :disabled="modalForm.isSubmitting"
+                class="flex-1 px-4 py-2 bg-primary-600 text-white font-medium rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ modalForm.isSubmitting ? 'Adding...' : 'Add Donation' }}
               </button>
-            </nav>
-          </div>
+              <button
+                type="button"
+                @click="showAddPhysicalModal = false"
+                class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
 
-    <!-- Donation Details Modal -->
-    <div v-if="selectedDonation" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal">
+    <!-- Enhanced Donation Details Modal -->
+    <div v-if="showDetailsModal && selectedDonation" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showDetailsModal = false">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
         <div class="mt-3">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-medium text-gray-900">Donation Details</h3>
-            <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
+            <button @click="showDetailsModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -301,53 +494,68 @@
           
           <div class="space-y-3 text-sm">
             <div class="flex justify-between">
-              <span class="font-medium text-gray-700">Amount:</span>
-              <span>{{ selectedDonation.amount }} {{ selectedDonation.currency.toUpperCase() }}</span>
+              <span class="font-medium text-gray-700">Donor:</span>
+              <span>{{ getDonorName(selectedDonation) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="font-medium text-gray-700">Date:</span>
-              <span>{{ formatDate(selectedDonation.created_at) }}</span>
+              <span class="font-medium text-gray-700">Email:</span>
+              <span>{{ getDonorEmail(selectedDonation) || 'N/A' }}</span>
             </div>
             <div class="flex justify-between">
               <span class="font-medium text-gray-700">Type:</span>
               <span class="capitalize">{{ selectedDonation.type }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="font-medium text-gray-700">Category:</span>
-              <span class="capitalize">{{ selectedDonation.category }}</span>
+              <span class="font-medium text-gray-700">Amount:</span>
+              <span>{{ selectedDonation.type === 'physical' ? 'N/A' : `RM${selectedDonation.amount.toFixed(2)}` }}</span>
             </div>
+            
+            <!-- Event Information -->
+            <div v-if="selectedDonation.event_id && selectedDonation.events" class="border-t pt-3">
+              <div class="flex justify-between mb-2">
+                <span class="font-medium text-gray-700">Event:</span>
+                <span class="text-blue-600">{{ selectedDonation.events.title }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-medium text-gray-700">Event Date:</span>
+                <span>{{ formatEventDate(selectedDonation.events) }}</span>
+              </div>
+              <div class="mt-2">
+                <NuxtLink 
+                  :to="`/events/${selectedDonation.event_id}`"
+                  target="_blank"
+                  class="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  → View Event Details
+                </NuxtLink>
+              </div>
+            </div>
+            <div v-else class="flex justify-between">
+              <span class="font-medium text-gray-700">Category:</span>
+              <span class="capitalize">{{ selectedDonation.category || 'General' }}</span>
+            </div>
+            
             <div class="flex justify-between">
               <span class="font-medium text-gray-700">Status:</span>
-              <span 
-                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize"
-                :class="getStatusClass(selectedDonation.status)"
-              >
+              <span :class="getStatusColor(selectedDonation.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
                 {{ selectedDonation.status }}
               </span>
             </div>
-            
-            <div v-if="selectedDonation.message" class="pt-3 border-t">
-              <span class="font-medium text-gray-700">Message:</span>
-              <p class="mt-1 text-gray-600">{{ selectedDonation.message }}</p>
+            <div class="flex justify-between">
+              <span class="font-medium text-gray-700">Date:</span>
+              <span>{{ formatDate(selectedDonation.created_at) }}</span>
             </div>
             
-            <div v-if="selectedDonation.stripe_payment_intent_id" class="pt-3 border-t">
-              <span class="font-medium text-gray-700">Transaction ID:</span>
-              <p class="mt-1 text-gray-600 text-xs font-mono">{{ selectedDonation.stripe_payment_intent_id }}</p>
+            <div v-if="selectedDonation.message" class="pt-3 border-t">
+              <span class="font-medium text-gray-700">Message/Items:</span>
+              <p class="mt-1 text-gray-600">{{ selectedDonation.message }}</p>
             </div>
           </div>
           
-          <div class="mt-6 flex space-x-3">
+          <div class="mt-6">
             <button 
-              v-if="selectedDonation.status === 'completed'"
-              @click="downloadReceipt(selectedDonation)"
-              class="flex-1 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700"
-            >
-              Download Receipt
-            </button>
-            <button 
-              @click="closeModal"
-              class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400"
+              @click="showDetailsModal = false"
+              class="w-full px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400"
             >
               Close
             </button>
@@ -359,180 +567,465 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 
-// Reactive data
-const donations = ref([])
-const subscriptions = ref([])
-const summary = ref({
-  totalDonated: 0,
-  thisYear: 0,
-  totalCount: 0,
-  activeSubscriptions: 0
-})
-const loading = ref(false)
-const selectedDonation = ref(null)
+definePageMeta({
+  layout: 'staff',
+  middleware: ['auth'] 
+});
 
+// Data
+const currentPage = ref(1);
+const itemsPerPage = 20;
+const showAddPhysicalModal = ref(false);
+const showDetailsModal = ref(false);
+const selectedDonation = ref(null);
+const availableEvents = ref([]);
+
+// Modal form data
+const modalForm = reactive({
+  searchQuery: '',
+  searchResults: [],
+  selectedDonor: null,
+  useManualEntry: false,
+  isSearching: false,
+  isSubmitting: false,
+  donor_name: '',
+  donor_email: '',
+  event_id: '',
+  category: 'general',
+  message: '',
+  status: 'pending',
+  errors: {
+    donor: '',
+    message: ''
+  }
+});
+
+// Filters
 const filters = ref({
+  search: '',
   type: '',
   status: '',
+  eventFilter: '',
   dateRange: ''
-})
+});
 
-const pagination = ref({
-  currentPage: 1,
-  perPage: 10,
-  totalCount: 0,
-  totalPages: 1
-})
+// Fetch donations with event information
+const { data: donations, pending, error, refresh } = useFetch('/api/staff/donations', {
+  lazy: true,
+  server: false,
+  transform: (data) => data.donations || []
+});
 
-// Computed
-const visiblePages = computed(() => {
-  const pages = []
-  const start = Math.max(1, pagination.value.currentPage - 2)
-  const end = Math.min(pagination.value.totalPages, pagination.value.currentPage + 2)
-  
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  return pages
-})
-
-// Methods
-const fetchDonations = async () => {
-  loading.value = true
+// Fetch available events for the modal
+const fetchAvailableEvents = async () => {
   try {
-    const query = new URLSearchParams({
-      page: pagination.value.currentPage,
-      limit: pagination.value.perPage,
-      ...filters.value
-    })
-    
-    const response = await $fetch(`/api/donations/history?${query}`)
-    
-    donations.value = response.donations
-    pagination.value = {
-      ...pagination.value,
-      totalCount: response.totalCount,
-      totalPages: Math.ceil(response.totalCount / pagination.value.perPage)
-    }
-  } catch (error) {
-    console.error('Failed to fetch donations:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const fetchSummary = async () => {
-  try {
-    const response = await $fetch('/api/donations/summary')
-    summary.value = response
-  } catch (error) {
-    console.error('Failed to fetch summary:', error)
-  }
-}
-
-const fetchSubscriptions = async () => {
-  try {
-    const response = await $fetch('/api/subscriptions/active')
-    subscriptions.value = response.subscriptions
-  } catch (error) {
-    console.error('Failed to fetch subscriptions:', error)
-  }
-}
-
-const changePage = (page) => {
-  if (page >= 1 && page <= pagination.value.totalPages) {
-    pagination.value.currentPage = page
-    fetchDonations()
-  }
-}
-
-const resetFilters = () => {
-  filters.value = {
-    type: '',
-    status: '',
-    dateRange: ''
-  }
-  pagination.value.currentPage = 1
-  fetchDonations()
-}
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-const getStatusClass = (status) => {
-  const classes = {
-    completed: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    failed: 'bg-red-100 text-red-800',
-    processing: 'bg-blue-100 text-blue-800',
-    cancelled: 'bg-gray-100 text-gray-800',
-    active: 'bg-green-100 text-green-800',
-    canceled: 'bg-red-100 text-red-800'
-  }
-  return classes[status] || 'bg-gray-100 text-gray-800'
-}
-
-const viewDonationDetails = (donation) => {
-  selectedDonation.value = donation
-}
-
-const closeModal = () => {
-  selectedDonation.value = null
-}
-
-const downloadReceipt = async (donation) => {
-  try {
-    const response = await $fetch(`/api/donations/${donation.id}/receipt`, {
+    const { data } = await $fetch('/api/events/list', {
       method: 'GET'
-    })
-    
-    // Create and download the receipt
-    const blob = new Blob([response], { type: 'application/pdf' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `donation-receipt-${donation.id}.pdf`
-    a.click()
-    window.URL.revokeObjectURL(url)
+    });
+    availableEvents.value = data || [];
   } catch (error) {
-    console.error('Failed to download receipt:', error)
-    alert('Failed to download receipt. Please try again.')
+    console.error('Error fetching events:', error);
+    availableEvents.value = [];
   }
-}
+};
 
+// Computed properties
+const stats = computed(() => {
+  if (!donations.value) return { 
+    totalDonations: 0, 
+    totalAmount: 0, 
+    physicalDonations: 0, 
+    eventDonations: 0,
+    activeDonors: 0 
+  };
+  
+  const total = donations.value.length;
+  const totalAmount = donations.value.filter(d => d.type !== 'physical').reduce((sum, d) => sum + (d.amount || 0), 0);
+  const physical = donations.value.filter(d => d.type === 'physical').length;
+  const eventDonations = donations.value.filter(d => d.event_id).length;
+  const uniqueDonors = new Set(donations.value.map(d => getDonorEmail(d) || getDonorName(d))).size;
 
-const cancelSubscription = async (subscriptionId) => {
-  if (!confirm('Are you sure you want to cancel this subscription?')) {
-    return
+  return { 
+    totalDonations: total, 
+    totalAmount, 
+    physicalDonations: physical, 
+    eventDonations,
+    activeDonors: uniqueDonors 
+  };
+});
+
+const filteredDonations = computed(() => {
+  if (!donations.value) return [];
+  
+  let filtered = [...donations.value];
+
+  if (filters.value.search) {
+    const search = filters.value.search.toLowerCase();
+    filtered = filtered.filter(donation => 
+      getDonorName(donation).toLowerCase().includes(search) ||
+      getDonorEmail(donation).toLowerCase().includes(search) ||
+      (donation.events?.title || '').toLowerCase().includes(search)
+    );
+  }
+
+  if (filters.value.type) {
+    filtered = filtered.filter(donation => donation.type === filters.value.type);
+  }
+
+  if (filters.value.status) {
+    filtered = filtered.filter(donation => donation.status === filters.value.status);
+  }
+
+  if (filters.value.eventFilter) {
+    if (filters.value.eventFilter === 'event') {
+      filtered = filtered.filter(donation => donation.event_id);
+    } else if (filters.value.eventFilter === 'general') {
+      filtered = filtered.filter(donation => !donation.event_id);
+    }
+  }
+
+  if (filters.value.dateRange) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    filtered = filtered.filter(donation => {
+      const donationDate = new Date(donation.created_at);
+      
+      switch (filters.value.dateRange) {
+        case 'today': return donationDate >= today;
+        case 'week': return donationDate >= new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case 'month': return donationDate >= new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+        default: return true;
+      }
+    });
+  }
+
+  return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+});
+
+const totalPages = computed(() => Math.ceil(filteredDonations.value.length / itemsPerPage));
+
+const paginatedDonations = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return filteredDonations.value.slice(start, start + itemsPerPage);
+});
+
+// Helper functions
+const getDonorName = (donation) => {
+  if (donation.profiles?.first_name && donation.profiles?.last_name) {
+    return `${donation.profiles.first_name} ${donation.profiles.last_name}`;
+  }
+  return donation.donor_name || 'Anonymous Donor';
+};
+
+const getDonorEmail = (donation) => donation.profiles?.email || donation.donor_email || '';
+
+const getDonorInitials = (donation) => {
+  const name = getDonorName(donation);
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+};
+
+const formatType = (type) => ({ 
+  onetime: 'One-time', 
+  subscription: 'Monthly', 
+  physical: 'Physical' 
+}[type] || type);
+
+const getTypeColor = (type) => ({
+  onetime: 'bg-blue-100 text-blue-800',
+  subscription: 'bg-green-100 text-green-800',
+  physical: 'bg-purple-100 text-purple-800'
+}[type] || 'bg-gray-100 text-gray-800');
+
+const getStatusColor = (status) => ({
+  completed: 'bg-green-100 text-green-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+  failed: 'bg-red-100 text-red-800',
+  cancelled: 'bg-gray-100 text-gray-800',
+  processing: 'bg-blue-100 text-blue-800'
+}[status] || 'bg-gray-100 text-gray-800');
+
+const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', {
+  year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+});
+
+const formatEventDate = (event) => {
+  if (!event) return 'Unknown Date';
+  
+  const startDate = new Date(event.event_startdate);
+  const endDate = new Date(event.event_enddate);
+  
+  const formatOptions = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  };
+  
+  if (startDate.toDateString() === endDate.toDateString()) {
+    return startDate.toLocaleDateString('en-US', formatOptions);
+  } else {
+    return `${startDate.toLocaleDateString('en-US', formatOptions)} - ${endDate.toLocaleDateString('en-US', formatOptions)}`;
+  }
+};
+
+// Modal functions
+let searchTimeout;
+const searchDonors = async () => {
+  clearTimeout(searchTimeout);
+  
+  if (modalForm.searchQuery.length < 2) {
+    modalForm.searchResults = [];
+    return;
   }
   
-  try {
-    await $fetch(`/api/subscriptions/${subscriptionId}/cancel`, {
-      method: 'POST'
-    })
+  searchTimeout = setTimeout(async () => {
+    modalForm.isSearching = true;
     
-    // Refresh data
-    await fetchSubscriptions()
-    await fetchSummary()
-    
-    alert('Subscription cancelled successfully.')
-  } catch (error) {
-    console.error('Failed to cancel subscription:', error)
-    alert('Failed to cancel subscription. Please try again.')
-  }
-}
+    try {
+      const response = await $fetch('/api/staff/search-users', {
+        method: 'POST',
+        body: {
+          query: modalForm.searchQuery
+        }
+      });
+      
+      modalForm.searchResults = response.users || [];
+    } catch (error) {
+      console.error('Search error:', error);
+      modalForm.searchResults = [];
+    } finally {
+      modalForm.isSearching = false;
+    }
+  }, 300);
+};
 
-// Lifecycle
+const selectDonor = (user) => {
+  modalForm.selectedDonor = user;
+  modalForm.searchQuery = `${user.first_name} ${user.last_name}`;
+  modalForm.searchResults = [];
+  modalForm.useManualEntry = false;
+  modalForm.errors.donor = '';
+};
+
+const clearDonorSelection = () => {
+  modalForm.selectedDonor = null;
+  modalForm.searchQuery = '';
+  modalForm.searchResults = [];
+  modalForm.useManualEntry = false;
+};
+
+const validateModalForm = () => {
+  modalForm.errors.donor = '';
+  modalForm.errors.message = '';
+  
+  // Check if donor is selected or manual entry is provided
+  if (!modalForm.selectedDonor && !modalForm.useManualEntry) {
+    modalForm.errors.donor = 'Please select a donor or enter manually';
+    return false;
+  }
+  
+  if (modalForm.useManualEntry && !modalForm.donor_name.trim()) {
+    modalForm.errors.donor = 'Donor name is required';
+    return false;
+  }
+  
+  if (!modalForm.message.trim()) {
+    modalForm.errors.message = 'Items description is required';
+    return false;
+  }
+  
+  return true;
+};
+
+const submitPhysicalDonation = async () => {
+  if (!validateModalForm()) {
+    return;
+  }
+  
+  modalForm.isSubmitting = true;
+  
+  try {
+    const donationData = {
+      // Use selected donor ID or null for manual entry
+      donor_id: modalForm.selectedDonor?.id || null,
+      donor_name: modalForm.selectedDonor ? 
+        `${modalForm.selectedDonor.first_name} ${modalForm.selectedDonor.last_name}` : 
+        modalForm.donor_name,
+      donor_email: modalForm.selectedDonor?.email || modalForm.donor_email || null,
+      event_id: modalForm.event_id || null,
+      category: modalForm.category,
+      message: modalForm.message,
+      status: modalForm.status
+    };
+    
+    console.log('Submitting donation:', donationData);
+    
+    const response = await $fetch('/api/donations/add-physical', {
+      method: 'POST',
+      body: donationData
+    });
+    
+    console.log('Donation added:', response);
+    
+    // Reset form and close modal
+    resetModalForm();
+    showAddPhysicalModal.value = false;
+    
+    // Refresh donations list
+    await refresh();
+    
+    alert(response.message || 'Physical donation added successfully!');
+    
+  } catch (error) {
+    console.error('Error adding physical donation:', error);
+    alert('Failed to add donation. Please try again.');
+  } finally {
+    modalForm.isSubmitting = false;
+  }
+};
+
+const resetModalForm = () => {
+  modalForm.selectedDonor = null;
+  modalForm.searchQuery = '';
+  modalForm.searchResults = [];
+  modalForm.useManualEntry = false;
+  modalForm.donor_name = '';
+  modalForm.donor_email = '';
+  modalForm.event_id = '';
+  modalForm.category = 'general';
+  modalForm.message = '';
+  modalForm.status = 'pending';
+  modalForm.errors.donor = '';
+  modalForm.errors.message = '';
+};
+
+// Enhanced status update function with confirmation
+const updateDonationStatus = async (donationId, newStatus) => {
+  const donation = donations.value.find(d => d.id === donationId);
+  const donorName = getDonorName(donation);
+  const donationType = formatType(donation.type);
+  const isEventDonation = donation.event_id ? ` for ${donation.events?.title}` : '';
+  
+  // Confirmation message based on status change
+  let confirmMessage = '';
+  if (newStatus === 'completed') {
+    confirmMessage = `Mark ${donationType}${isEventDonation} from ${donorName} as completed?`;
+    if (donation.type === 'physical') {
+      confirmMessage += '\n\nThis means the physical items have been received.';
+    }
+  } else if (newStatus === 'failed') {
+    confirmMessage = `Mark ${donationType}${isEventDonation} from ${donorName} as failed?`;
+    if (donation.type === 'physical') {
+      confirmMessage += '\n\nThis means the promised items were not received.';
+    }
+  } else if (newStatus === 'cancelled') {
+    confirmMessage = `Cancel ${donationType}${isEventDonation} from ${donorName}?`;
+  } else {
+    confirmMessage = `Change ${donationType}${isEventDonation} from ${donorName} to ${newStatus}?`;
+  }
+  
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  try {
+    // Show loading state
+    const originalStatus = donation.status;
+    donation.status = 'updating...';
+    
+    await $fetch('/api/donations/update-status', {
+      method: 'POST',
+      body: { 
+        donation_id: donationId, 
+        status: newStatus,
+        source: 'staff' // Tell API this is a staff update
+      }
+    });
+    
+    // Update local data
+    donation.status = newStatus;
+    donation.updated_at = new Date().toISOString();
+    
+    // Show success message based on donation type and status
+    let successMessage = '';
+    if (donation.type === 'physical' && newStatus === 'completed') {
+      successMessage = 'Physical donation marked as received!';
+    } else if (donation.type === 'physical' && newStatus === 'failed') {
+      successMessage = 'Physical donation marked as not received.';
+    } else {
+      successMessage = `Donation status updated to ${newStatus}!`;
+    }
+    
+    alert(successMessage);
+    
+  } catch (error) {
+    console.error('Error updating donation status:', error);
+    
+    // Revert the status on error
+    donation.status = originalStatus;
+    
+    alert('Failed to update donation status. Please try again.');
+  }
+};
+
+// Function to get appropriate colors for status select dropdown
+const getStatusSelectColor = (status) => {
+  const colors = {
+    pending: 'text-yellow-700 bg-yellow-50 border-yellow-300',
+    completed: 'text-green-700 bg-green-50 border-green-300',
+    processing: 'text-blue-700 bg-blue-50 border-blue-300',
+    failed: 'text-red-700 bg-red-50 border-red-300',
+    cancelled: 'text-gray-700 bg-gray-50 border-gray-300',
+    'updating...': 'text-gray-500 bg-gray-100 border-gray-300'
+  };
+  return colors[status] || 'text-gray-700 bg-white border-gray-300';
+};
+
+// Actions
+const viewDonationDetails = (donation) => {
+  selectedDonation.value = donation;
+  showDetailsModal.value = true;
+};
+
+const exportToCsv = () => {
+  const csvData = filteredDonations.value.map(donation => ({
+    'Donor': getDonorName(donation),
+    'Email': getDonorEmail(donation),
+    'Type': formatType(donation.type),
+    'Amount': donation.type === 'physical' ? 'N/A' : donation.amount.toFixed(2),
+    'Event': donation.events?.title || 'N/A',
+    'Category': donation.category || 'General',
+    'Status': donation.status,
+    'Date': formatDate(donation.created_at),
+    'Items': donation.message || ''
+  }));
+
+  const csv = Object.keys(csvData[0]).join(',') + '\n' + 
+    csvData.map(row => Object.values(row).map(val => `"${val}"`).join(',')).join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `donations-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// Reset pagination when filters change
+watch([filters], () => currentPage.value = 1, { deep: true });
+
+// Reset modal form when modal closes
+watch(showAddPhysicalModal, (newValue) => {
+  if (!newValue) {
+    resetModalForm();
+  }
+});
+
+// Initialize
 onMounted(() => {
-  fetchDonations()
-  fetchSummary()
-  fetchSubscriptions()
-})
+  fetchAvailableEvents();
+});
 </script>

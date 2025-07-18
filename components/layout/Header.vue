@@ -70,6 +70,7 @@
                 </div>
                 <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Profile</NuxtLink>
                 <NuxtLink to="/donations" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">My Donations</NuxtLink>
+                <NuxtLink to="/volunteers" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Volunteers Applied</NuxtLink>
                 <NuxtLink to="/messages" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Messages</NuxtLink>
                 <NuxtLink v-if="['admin', 'head_admin'].includes(profile?.role)" to="/admin/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Admin</NuxtLink>
                 <NuxtLink v-if="profile?.role === 'staff'" to="/staff/dashboard" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Staff</NuxtLink>
@@ -119,6 +120,7 @@
             
             <NuxtLink to="/profile" class="block py-2 text-neutral-700">Profile</NuxtLink>
             <NuxtLink to="/donations" class="block py-2 text-neutral-700">My Donations</NuxtLink>
+            <NuxtLink to="/volunteers" class="block py-2 text-neutral-700">Volunteers Applied</NuxtLink>
             <NuxtLink to="/messages" class="block py-2 text-neutral-700">Messages</NuxtLink>
             <NuxtLink v-if="['admin', 'head_admin'].includes(profile?.role)" to="/admin/profile" class="block py-2 text-neutral-700">Admin</NuxtLink>
             <NuxtLink v-if="profile?.role === 'staff'" to="/staff/dashboard" class="block py-2 text-neutral-700">Staff</NuxtLink>
@@ -239,4 +241,4 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
-</script> 
+</script>
