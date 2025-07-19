@@ -17,7 +17,7 @@
       </button>
     </div>
 
-    <!-- Improved Stats Overview -->
+    <!-- Stats Overview (keeping existing stats section) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <!-- Total Donations -->
       <div class="relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-sm border border-emerald-200 p-6 overflow-hidden">
@@ -142,7 +142,7 @@
       
       <!-- Filter Controls -->
       <div class="p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <!-- Enhanced Search Input -->
           <div class="col-span-1 md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-2">Search Donations</label>
@@ -183,6 +183,7 @@
                 <option value="onetime">One-time</option>
                 <option value="subscription">Monthly</option>
                 <option value="physical">Physical</option>
+                <option value="purchase">Purchase</option>
                 <option value="event">Event</option>
               </select>
               <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -206,25 +207,6 @@
                 <option value="failed">Failed</option>
                 <option value="processing">Processing</option>
                 <option value="cancelled">Cancelled</option>
-              </select>
-              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <div class="relative">
-              <select
-                v-model="filters.eventFilter"
-                class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 sm:text-sm appearance-none"
-              >
-                <option value="">All Donations</option>
-                <option value="general">General Donations</option>
-                <option value="event">Event Donations</option>
               </select>
               <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -338,9 +320,9 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 200px;">Donor</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 100px;">Type</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 120px;">Amount</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 150px;">Category/Event</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 250px;">Items/Description</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 150px;">Category</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 120px;">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 250px;">Message</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 300px;">Actions</th>
             </tr>
           </thead>
@@ -367,12 +349,38 @@
                 </div>
               </td>
               <td class="px-4 py-4" style="min-width: 100px;">
-                <span :class="getTypeColor(donation.type, donation.event_id)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap">
-                  {{ formatType(donation.type, donation.event_id) }}
+                <span :class="getTypeColor(donation)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap">
+                  {{ getDisplayType(donation) }}
                 </span>
               </td>
               <td class="px-4 py-4 text-sm text-gray-900" style="min-width: 120px;">
                 {{ (donation.type === 'physical' || !donation.amount) ? 'N/A' : `RM${donation.amount.toFixed(2)}` }}
+              </td>
+              <td class="px-4 py-4 text-sm text-gray-500" style="min-width: 250px;">
+                <!-- Show purchase items ONLY when order_items exist and have valid product_id -->
+                <div v-if="donation.order_items && donation.order_items.length > 0 && 
+                          donation.order_items.some(item => item.product_id != null)">
+                  <div class="space-y-1">
+                    <div v-for="item in donation.order_items.slice(0, 2)" :key="item.id" class="text-sm">
+                      <span class="font-medium text-gray-700">{{ item.product_name }}</span>
+                      <span class="text-gray-500 ml-2">x{{ item.quantity }}</span>
+                      <span class="text-gray-500 ml-1">- RM{{ item.total_amount.toFixed(2) }}</span>
+                    </div>
+                    <div v-if="donation.order_items.length > 2" class="text-xs text-gray-400">
+                      +{{ donation.order_items.length - 2 }} more items
+                    </div>
+                  </div>
+                  <!-- Show note/message for purchases too if it exists -->
+                  <div v-if="donation.message" class="mt-2 pt-2 border-t border-gray-200">
+                    <div class="text-xs text-gray-600 italic truncate" :title="donation.message">
+                      Note: {{ donation.message }}
+                    </div>
+                  </div>
+                </div>
+                <!-- For all other types: show ONLY the message -->
+                <div v-else class="truncate" :title="donation.message || ''">
+                  {{ donation.message || '' }}
+                </div>
               </td>
               <td class="px-4 py-4 text-sm text-gray-500" style="min-width: 150px;">
                 <div v-if="donation.event_id && donation.events" class="cursor-pointer" @click="goToEvent(donation.event_id)">
@@ -391,11 +399,6 @@
                 <span :class="getStatusColor(donation.status)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap">
                   {{ donation.status }}
                 </span>
-              </td>
-              <td class="px-4 py-4 text-sm text-gray-500 max-w-xs" style="min-width: 250px;">
-                <div class="truncate" :title="donation.message">
-                  {{ donation.message || '-' }}
-                </div>
               </td>
               <td class="px-4 py-4 text-sm font-medium" style="min-width: 300px;">
                 <div class="flex items-center space-x-2 flex-wrap gap-y-1">
@@ -682,10 +685,12 @@
 
     <!-- Enhanced Donation Details Modal -->
     <div v-if="showDetailsModal && selectedDonation" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showDetailsModal = false">
-      <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white" @click.stop>
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white" @click.stop>
         <div class="mt-3">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Donation Details</h3>
+            <h3 class="text-lg font-medium text-gray-900">
+              {{ selectedDonation.order_items && selectedDonation.order_items.length > 0 ? 'Purchase Details' : 'Transaction Details' }}
+            </h3>
             <button @click="showDetailsModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -693,8 +698,30 @@
             </button>
           </div>
           
-          <div class="space-y-4 text-sm max-h-96 overflow-y-auto">
-            <!-- Basic Donor Information -->
+          <div class="space-y-4 text-sm">
+            <!-- Basic Information -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="font-medium text-gray-700">Date:</span>
+                <p class="mt-1">{{ formatDate(selectedDonation.created_at) }}</p>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Type:</span>
+                <p class="mt-1 capitalize">{{ getDisplayType(selectedDonation) }}</p>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Total Amount:</span>
+                <p class="mt-1 font-semibold text-lg">{{ selectedDonation.type === 'physical' ? 'N/A' : `RM${selectedDonation.amount.toFixed(2)}` }}</p>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Status:</span>
+                <span :class="getStatusColor(selectedDonation.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1">
+                  {{ selectedDonation.status }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Donor Information -->
             <div class="bg-gray-50 p-4 rounded-lg">
               <h4 class="font-semibold text-gray-800 mb-3">Donor Information</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -706,250 +733,71 @@
                   <span class="font-medium text-gray-700">Email:</span>
                   <span>{{ getDonorEmail(selectedDonation) || 'N/A' }}</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="font-medium text-gray-700">Type:</span>
-                  <span class="capitalize">{{ formatType(selectedDonation.type, selectedDonation.event_id) }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="font-medium text-gray-700">Status:</span>
-                  <span :class="getStatusColor(selectedDonation.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-                    {{ selectedDonation.status }}
-                  </span>
-                </div>
               </div>
             </div>
 
-            <!-- Amount Information -->
-            <div v-if="selectedDonation.type !== 'physical'" class="bg-green-50 p-4 rounded-lg">
-              <h4 class="font-semibold text-green-800 mb-3">Payment Information</h4>
-              <div class="flex justify-between items-center">
-                <span class="font-medium text-green-700">Total Amount:</span>
-                <span class="text-xl font-bold text-green-800">RM{{ selectedDonation.amount?.toFixed(2) || '0.00' }}</span>
-              </div>
-              <div v-if="selectedDonation.stripe_payment_intent_id" class="mt-2">
-                <span class="text-xs text-green-600">Payment ID: {{ selectedDonation.stripe_payment_intent_id }}</span>
-              </div>
-            </div>
-            
             <!-- Event Information -->
-            <div v-if="selectedDonation.event_id && selectedDonation.events" class="bg-blue-50 p-4 rounded-lg">
-              <h4 class="font-semibold text-blue-800 mb-3">Event Information</h4>
-              <div class="space-y-2">
-                <div class="flex justify-between">
-                  <span class="font-medium text-blue-700">Event:</span>
-                  <span class="text-blue-800 font-medium">{{ selectedDonation.events.title }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="font-medium text-blue-700">Event Date:</span>
-                  <span>{{ formatEventDate(selectedDonation.events) }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="font-medium text-blue-700">Event Type:</span>
-                  <span class="capitalize">{{ selectedDonation.events.event_type }}</span>
-                </div>
-                <div v-if="selectedDonation.events.location" class="flex justify-between">
-                  <span class="font-medium text-blue-700">Location:</span>
-                  <span>{{ selectedDonation.events.location }}</span>
-                </div>
-                <div class="mt-3">
-                  <button 
-                    @click="goToEvent(selectedDonation.event_id)"
-                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    → View Event Details
-                  </button>
-                </div>
-              </div>
+            <div v-if="selectedDonation.event_id" class="pt-3 border-t">
+              <span class="font-medium text-gray-700">Event:</span>
+              <p class="mt-1 text-gray-600">{{ selectedDonation.events?.title || 'Event Transaction' }}</p>
             </div>
 
-            <!-- Enhanced Purchase Details Section -->
-            <div v-if="selectedDonation.event_id && selectedDonation.events?.event_type === 'selling' && donationOrderItems.length > 0" 
-                 class="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-xl border border-purple-200">
-              <h4 class="font-bold text-purple-800 mb-4 flex items-center text-lg">
-                <svg class="w-6 h-6 mr-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                </svg>
-                🛍️ Items Purchased
-              </h4>
-              
-              <!-- Detailed list of purchased items -->
-              <div class="space-y-3">
-                <div v-for="(item, index) in donationOrderItems" :key="item.id" 
-                     class="bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
-                  <div class="flex justify-between items-start mb-2">
+            <!-- Purchase Items -->
+            <div v-if="selectedDonation.order_items && selectedDonation.order_items.length > 0" class="pt-3 border-t">
+              <span class="font-medium text-gray-700">Items Purchased:</span>
+              <div class="mt-2 space-y-3">
+                <div v-for="item in selectedDonation.order_items" :key="item.id" class="bg-gray-50 rounded-lg p-4">
+                  <div class="flex justify-between items-start">
                     <div class="flex-1">
-                      <div class="flex items-start">
-                        <span class="inline-flex items-center justify-center w-6 h-6 bg-purple-100 text-purple-800 text-xs font-medium rounded-full mr-3 mt-0.5">
-                          {{ index + 1 }}
-                        </span>
-                        <div class="flex-1">
-                          <h5 class="font-semibold text-gray-900 text-base">{{ item.product_name }}</h5>
-                          <div v-if="item.products?.description" class="text-sm text-gray-600 mt-1 leading-relaxed">
-                            {{ item.products.description }}
+                      <h4 class="font-medium text-gray-900">{{ item.product_name }}</h4>
+                      <div class="text-sm text-gray-600 mt-2 space-y-1">
+                        <div class="grid grid-cols-3 gap-4">
+                          <div>
+                            <span class="text-gray-500">Quantity:</span>
+                            <div class="font-medium">{{ item.quantity }}</div>
+                          </div>
+                          <div>
+                            <span class="text-gray-500">Unit Price:</span>
+                            <div class="font-medium">RM{{ item.product_price.toFixed(2) }}</div>
+                          </div>
+                          <div>
+                            <span class="text-gray-500">Subtotal:</span>
+                            <div class="font-semibold">RM{{ item.total_amount.toFixed(2) }}</div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div v-if="item.products?.image_url" class="ml-4 flex-shrink-0">
-                      <img :src="item.products.image_url" :alt="item.product_name" 
-                           class="w-16 h-16 object-cover rounded-lg border border-gray-200">
-                    </div>
-                  </div>
-                  
-                  <!-- Purchase details in a clean grid -->
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t border-gray-100">
-                    <div class="text-center">
-                      <div class="text-xs text-gray-500 uppercase tracking-wide">Quantity</div>
-                      <div class="text-lg font-bold text-purple-800">{{ item.quantity }}</div>
-                    </div>
-                    <div class="text-center">
-                      <div class="text-xs text-gray-500 uppercase tracking-wide">Unit Price</div>
-                      <div class="text-lg font-bold text-purple-800">RM{{ item.product_price.toFixed(2) }}</div>
-                    </div>
-                    <div class="text-center">
-                      <div class="text-xs text-gray-500 uppercase tracking-wide">Subtotal</div>
-                      <div class="text-lg font-bold text-purple-900">RM{{ item.total_amount.toFixed(2) }}</div>
-                    </div>
-                    <div class="text-center">
-                      <div class="text-xs text-gray-500 uppercase tracking-wide">Ordered</div>
-                      <div class="text-sm font-medium text-gray-700">{{ formatDate(item.created_at) }}</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Product status indicator -->
-                  <div class="mt-3 pt-2 border-t border-gray-100">
-                    <div v-if="!item.products" class="flex items-center text-xs text-red-600">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                      </svg>
-                      Product no longer available in system
-                    </div>
-                    <div v-else-if="!item.products.available" class="flex items-center text-xs text-orange-600">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                      Product currently unavailable
-                    </div>
-                    <div v-else class="flex items-center text-xs text-green-600">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                      Product still available
-                      <span v-if="item.products.price !== item.product_price" class="ml-2 text-orange-600">
-                        (Price changed: RM{{ item.products.price.toFixed(2) }})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Enhanced Purchase Summary -->
-              <div class="mt-4 p-4 bg-white rounded-lg border-2 border-purple-300">
-                <h5 class="font-bold text-purple-900 mb-3 flex items-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                  </svg>
-                  Purchase Summary
-                </h5>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div class="text-center p-3 bg-purple-50 rounded-lg">
-                    <div class="text-sm text-purple-600 font-medium">Total Items</div>
-                    <div class="text-2xl font-bold text-purple-900">
-                      {{ donationOrderItems.reduce((sum, item) => sum + item.quantity, 0) }}
-                    </div>
-                  </div>
-                  
-                  <div class="text-center p-3 bg-purple-50 rounded-lg">
-                    <div class="text-sm text-purple-600 font-medium">Purchase Total</div>
-                    <div class="text-2xl font-bold text-purple-900">
-                      RM{{ donationOrderItems.reduce((sum, item) => sum + parseFloat(item.total_amount), 0).toFixed(2) }}
-                    </div>
-                  </div>
-                  
-                  <div class="text-center p-3 bg-purple-50 rounded-lg">
-                    <div class="text-sm text-purple-600 font-medium">
-                      {{ selectedDonation.amount > donationOrderItems.reduce((sum, item) => sum + parseFloat(item.total_amount), 0) ? 'Extra Donation' : 'Payment Type' }}
-                    </div>
-                    <div class="text-lg font-bold text-purple-900">
-                      <span v-if="selectedDonation.amount > donationOrderItems.reduce((sum, item) => sum + parseFloat(item.total_amount), 0)">
-                        +RM{{ (selectedDonation.amount - donationOrderItems.reduce((sum, item) => sum + parseFloat(item.total_amount), 0)).toFixed(2) }}
-                      </span>
-                      <span v-else class="text-base">
-                        Purchase Only
-                      </span>
-                    </div>
                   </div>
                 </div>
                 
-                <!-- Grand Total -->
-                <div v-if="selectedDonation.amount" class="mt-4 pt-4 border-t border-purple-200">
+                <!-- Total Summary -->
+                <div class="bg-primary-50 rounded-lg p-4 border border-primary-200">
                   <div class="flex justify-between items-center">
-                    <span class="text-lg font-semibold text-purple-800">Grand Total Paid:</span>
-                    <span class="text-2xl font-bold text-purple-900">RM{{ selectedDonation.amount.toFixed(2) }}</span>
-                  </div>
-                  <div class="text-sm text-purple-600 mt-1">
-                    {{ selectedDonation.amount > donationOrderItems.reduce((sum, item) => sum + parseFloat(item.total_amount), 0) 
-                       ? 'Purchase + Additional Donation' : 'Purchase Amount Only' }}
+                    <span class="font-semibold text-primary-800">Total Amount:</span>
+                    <span class="font-bold text-primary-900 text-xl">RM{{ selectedDonation.amount.toFixed(2) }}</span>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Loading state -->
-            <div v-else-if="selectedDonation.event_id && selectedDonation.events?.event_type === 'selling' && loadingOrderItems" 
-                 class="bg-blue-50 p-4 rounded-lg">
-              <div class="flex items-center justify-center">
-                <svg class="animate-spin h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span class="text-blue-700">Loading purchase details...</span>
-              </div>
-            </div>
-
-            <!-- No purchases (pure donation) -->
-            <div v-else-if="selectedDonation.event_id && selectedDonation.events?.event_type === 'selling' && donationOrderItems.length === 0 && !loadingOrderItems" 
-                 class="bg-green-50 p-4 rounded-lg">
-              <div class="text-center text-green-700">
-                <svg class="mx-auto h-8 w-8 text-green-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                </svg>
-                <p class="font-medium">Pure Donation</p>
-                <p class="text-sm text-green-600 mt-1">No items purchased - this was a generous donation to support the event</p>
-              </div>
-            </div>
-
-            <!-- Category for non-event donations -->
-            <div v-else class="bg-gray-50 p-4 rounded-lg">
-              <h4 class="font-semibold text-gray-800 mb-3">Category</h4>
-              <div class="flex justify-between">
-                <span class="font-medium text-gray-700">Category:</span>
-                <span class="capitalize">{{ selectedDonation.category || 'General' }}</span>
-              </div>
+            
+            <!-- Message/Note -->
+            <div v-if="selectedDonation.message" class="pt-3 border-t">
+              <span class="font-medium text-gray-700">
+                {{ selectedDonation.order_items && selectedDonation.order_items.length > 0 ? 'Note:' : 'Message:' }}
+              </span>
+              <p class="mt-1 text-gray-600 bg-gray-50 rounded p-3">{{ selectedDonation.message }}</p>
             </div>
             
-            <!-- Date Information -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h4 class="font-semibold text-gray-800 mb-3">Timeline</h4>
-              <div class="space-y-2">
-                <div class="flex justify-between">
-                  <span class="font-medium text-gray-700">Created:</span>
-                  <span>{{ formatDate(selectedDonation.created_at) }}</span>
-                </div>
-                <div v-if="selectedDonation.updated_at && selectedDonation.updated_at !== selectedDonation.created_at" class="flex justify-between">
-                  <span class="font-medium text-gray-700">Last Updated:</span>
-                  <span>{{ formatDate(selectedDonation.updated_at) }}</span>
-                </div>
-              </div>
+            <!-- Transaction ID -->
+            <div v-if="selectedDonation.stripe_payment_intent_id" class="pt-3 border-t">
+              <span class="font-medium text-gray-700">Transaction ID:</span>
+              <p class="mt-1 text-gray-600 text-xs font-mono bg-gray-50 rounded p-2 break-all">{{ selectedDonation.stripe_payment_intent_id }}</p>
             </div>
-            
-            <!-- Message/Items Description -->
-            <div v-if="selectedDonation.message" class="bg-yellow-50 p-4 rounded-lg">
-              <h4 class="font-semibold text-yellow-800 mb-3">
-                {{ selectedDonation.type === 'physical' ? 'Items Description' : 'Message' }}
-              </h4>
-              <p class="text-yellow-900">{{ selectedDonation.message }}</p>
+
+            <!-- Category -->
+            <div class="pt-3 border-t">
+              <span class="font-medium text-gray-700">Category:</span>
+              <p class="mt-1 text-gray-600 capitalize">{{ selectedDonation.category || 'General' }}</p>
             </div>
           </div>
           
@@ -1002,10 +850,6 @@ const showDetailsModal = ref(false);
 const selectedDonation = ref(null);
 const availableEvents = ref([]);
 
-// Order items data for detailed view
-const donationOrderItems = ref([]);
-const loadingOrderItems = ref(false);
-
 // Modal form data
 const modalForm = reactive({
   searchQuery: '',
@@ -1026,11 +870,50 @@ const modalForm = reactive({
   }
 });
 
-// Fetch donations with event information
+// Enhanced fetch data with order items
 const { data: donations, pending, error, refresh } = useFetch('/api/staff/donations', {
   lazy: true,
   server: false,
-  transform: (data) => data.donations || []
+  transform: async (data) => {
+    console.log('Raw API response for donations:', data);
+    const donationsData = data?.donations || data || [];
+    
+    // If we have donations, fetch their order items
+    if (donationsData.length > 0) {
+      try {
+        const supabase = useSupabaseClient();
+        const donationIds = donationsData.map(d => d.id);
+        
+        // Fetch order items for all donations
+        const { data: orderItems, error: orderItemsError } = await supabase
+          .from('order_items')
+          .select('*')
+          .in('donation_id', donationIds);
+        
+        if (!orderItemsError && orderItems) {
+          // Group order items by donation_id
+          const orderItemsByDonation = {};
+          orderItems.forEach(item => {
+            if (!orderItemsByDonation[item.donation_id]) {
+              orderItemsByDonation[item.donation_id] = [];
+            }
+            orderItemsByDonation[item.donation_id].push(item);
+          });
+          
+          // Add order items to donations
+          donationsData.forEach(donation => {
+            donation.order_items = orderItemsByDonation[donation.id] || [];
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching order items:', error);
+        // Continue without order items
+      }
+    }
+    
+    return donationsData;
+  },
+  default: () => []
 });
 
 // Fetch available events for the modal
@@ -1043,28 +926,6 @@ const fetchAvailableEvents = async () => {
   } catch (error) {
     console.error('Error fetching events:', error);
     availableEvents.value = [];
-  }
-};
-
-// Fetch order items for donation details
-const fetchDonationOrderItems = async (donationId) => {
-  loadingOrderItems.value = true;
-  donationOrderItems.value = [];
-  
-  try {
-    const response = await $fetch('/api/staff/donation-purchases', {
-      method: 'POST',
-      body: {
-        donation_id: donationId
-      }
-    });
-    
-    donationOrderItems.value = response.orderItems || [];
-  } catch (error) {
-    console.error('Error fetching donation order items:', error);
-    donationOrderItems.value = [];
-  } finally {
-    loadingOrderItems.value = false;
   }
 };
 
@@ -1099,33 +960,54 @@ const hasActiveFilters = computed(() => {
 });
 
 const filteredDonations = computed(() => {
-  if (!donations.value) return [];
+  console.log('Computing filtered donations, raw data:', donations.value);
+  
+  if (!donations.value || !Array.isArray(donations.value)) {
+    console.log('No donations data or not an array');
+    return [];
+  }
   
   let filtered = [...donations.value];
+  console.log('Starting with donations:', filtered.length);
 
   if (filters.value.search) {
     const search = filters.value.search.toLowerCase();
-    filtered = filtered.filter(donation => 
-      getDonorName(donation).toLowerCase().includes(search) ||
-      getDonorEmail(donation).toLowerCase().includes(search) ||
-      (donation.events?.title || '').toLowerCase().includes(search) ||
-      (donation.message || '').toLowerCase().includes(search) ||
-      (donation.category || '').toLowerCase().includes(search)
-    );
+    filtered = filtered.filter(donation => {
+      // Search in donor info, message, category, and order items
+      const donorNameMatch = getDonorName(donation).toLowerCase().includes(search);
+      const donorEmailMatch = getDonorEmail(donation).toLowerCase().includes(search);
+      const messageMatch = (donation.message || '').toLowerCase().includes(search);
+      const categoryMatch = (donation.category || '').toLowerCase().includes(search);
+      const eventMatch = (donation.events?.title || '').toLowerCase().includes(search);
+      const itemsMatch = donation.order_items?.some(item => 
+        item.product_name.toLowerCase().includes(search)
+      ) || false;
+      
+      return donorNameMatch || donorEmailMatch || messageMatch || categoryMatch || eventMatch || itemsMatch;
+    });
+    console.log('After search filter:', filtered.length);
   }
 
   if (filters.value.type) {
     if (filters.value.type === 'event') {
-      // Filter for donations with event_id
       filtered = filtered.filter(donation => donation.event_id);
+    } else if (filters.value.type === 'purchase') {
+      filtered = filtered.filter(donation => 
+        donation.order_items && donation.order_items.length > 0 &&
+        donation.order_items.some(item => item.product_id != null)
+      );
     } else {
-      // Filter for donations without event_id and matching type
-      filtered = filtered.filter(donation => !donation.event_id && donation.type === filters.value.type);
+      // For specific types (onetime, physical, subscription), filter by exact type
+      filtered = filtered.filter(donation => 
+        !donation.event_id && donation.type === filters.value.type
+      );
     }
+    console.log('After type filter:', filtered.length);
   }
 
   if (filters.value.status) {
     filtered = filtered.filter(donation => donation.status === filters.value.status);
+    console.log('After status filter:', filtered.length);
   }
 
   if (filters.value.eventFilter) {
@@ -1150,9 +1032,12 @@ const filteredDonations = computed(() => {
         default: return true;
       }
     });
+    console.log('After date filter:', filtered.length);
   }
 
-  return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const result = filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  console.log('Final filtered donations:', result.length);
+  return result;
 });
 
 const totalPages = computed(() => Math.ceil(filteredDonations.value.length / itemsPerPage));
@@ -1177,6 +1062,41 @@ const getDonorInitials = (donation) => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 };
 
+// Enhanced helper functions
+const getDisplayType = (donation) => {
+  if (donation.event_id) return 'Event';
+  
+  // Only show as Purchase if it has order items with valid product_id
+  if (donation.order_items && donation.order_items.length > 0 && 
+      donation.order_items.some(item => item.product_id != null)) {
+    return 'Purchase';
+  }
+  
+  return { 
+    onetime: 'One-time', 
+    subscription: 'Monthly', 
+    physical: 'Physical',
+    purchase: 'Purchase'
+  }[donation.type] || donation.type;
+};
+
+const getTypeColor = (donation) => {
+  if (donation.event_id) return 'bg-indigo-100 text-indigo-800';
+  
+  // Only show as purple if it has order items with valid product_id
+  if (donation.order_items && donation.order_items.length > 0 && 
+      donation.order_items.some(item => item.product_id != null)) {
+    return 'bg-purple-100 text-purple-800';
+  }
+  
+  return {
+    onetime: 'bg-green-100 text-green-800',
+    subscription: 'bg-blue-100 text-blue-800',
+    physical: 'bg-orange-100 text-orange-800',
+    purchase: 'bg-purple-100 text-purple-800'
+  }[donation.type] || 'bg-gray-100 text-gray-800';
+};
+
 const formatType = (type, eventId) => {
   if (eventId) return 'Event';
   return { 
@@ -1184,15 +1104,6 @@ const formatType = (type, eventId) => {
     subscription: 'Monthly', 
     physical: 'Physical' 
   }[type] || type;
-};
-
-const getTypeColor = (type, eventId) => {
-  if (eventId) return 'bg-indigo-100 text-indigo-800';
-  return {
-    onetime: 'bg-blue-100 text-blue-800',
-    subscription: 'bg-green-100 text-green-800',
-    physical: 'bg-purple-100 text-purple-800'
-  }[type] || 'bg-gray-100 text-gray-800';
 };
 
 const getStatusColor = (status) => ({
@@ -1456,11 +1367,6 @@ const getStatusSelectColor = (status) => {
 const viewDonationDetails = (donation) => {
   selectedDonation.value = donation;
   showDetailsModal.value = true;
-  
-  // Fetch order items if this is an event donation with selling type
-  if (donation.event_id && donation.events?.event_type === 'selling') {
-    fetchDonationOrderItems(donation.id);
-  }
 };
 
 const exportToCsv = () => {
@@ -1468,12 +1374,13 @@ const exportToCsv = () => {
     'Date': formatDate(donation.created_at),
     'Donor': getDonorName(donation),
     'Email': getDonorEmail(donation),
-    'Type': formatType(donation.type, donation.event_id),
-    'Amount': donation.type === 'physical' ? 'N/A' : donation.amount.toFixed(2),
+    'Type': getDisplayType(donation),
+    'Amount': donation.type === 'physical' ? 'N/A' : donation.amount?.toFixed(2) || 'N/A',
     'Event': donation.events?.title || 'N/A',
     'Category': donation.category || 'General',
     'Status': donation.status,
-    'Message': donation.message || ''
+    'Message': donation.message || '',
+    'Items': donation.order_items?.map(item => `${item.product_name} (x${item.quantity})`).join('; ') || ''
   }));
 
   const csv = Object.keys(csvData[0]).join(',') + '\n' + 
@@ -1495,14 +1402,6 @@ watch([filters], () => currentPage.value = 1, { deep: true });
 watch(showAddPhysicalModal, (newValue) => {
   if (!newValue) {
     resetModalForm();
-  }
-});
-
-// Reset order items when modal closes
-watch(showDetailsModal, (newValue) => {
-  if (!newValue) {
-    donationOrderItems.value = [];
-    loadingOrderItems.value = false;
   }
 });
 

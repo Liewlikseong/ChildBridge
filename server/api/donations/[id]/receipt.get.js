@@ -1,4 +1,3 @@
-// server/api/donations/[id]/receipt.get.js
 import PDFDocument from 'pdfkit';
 import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'; 
 
@@ -77,6 +76,20 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Fetch order items for purchase transactions
+    let orderItems = [];
+    try {
+      const { data: items } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('donation_id', donation.id);
+      
+      orderItems = items || [];
+      console.log('Order items found:', orderItems.length);
+    } catch (err) {
+      console.log('Order items fetch failed, continuing without items');
+    }
+
     // Try to get profile data (optional)
     let profileData = null;
     if (donation.donor_id) {
@@ -100,7 +113,7 @@ export default defineEventHandler(async (event) => {
       try {
         const { data: event } = await supabase
           .from('events')
-          .select('title, description')
+          .select('title, description, event_type')
           .eq('id', donation.event_id)
           .single();
         
@@ -176,8 +189,16 @@ export default defineEventHandler(async (event) => {
         
         // Donation Type
         let donationType = 'General Donation';
+        let isPurchase = orderItems.length > 0 && orderItems.some(item => item.product_id != null);
+        
         if (donation.event_id && eventData) {
-          donationType = 'Event Donation';
+          if (isPurchase) {
+            donationType = 'Event Purchase';
+          } else {
+            donationType = 'Event Donation';
+          }
+        } else if (isPurchase) {
+          donationType = 'Purchase';
         } else if (donation.type === 'subscription') {
           donationType = 'Monthly Subscription';
         } else if (donation.type === 'physical') {
@@ -202,7 +223,7 @@ export default defineEventHandler(async (event) => {
         
         doc.moveDown(1);
         
-        // Amount or Items
+        // Items or Amount section
         if (donation.type === 'physical') {
           doc.fontSize(14)
              .font('Helvetica-Bold')
@@ -217,12 +238,78 @@ export default defineEventHandler(async (event) => {
             fontSize: 10, 
             color: 'gray' 
           });
+        } else if (isPurchase) {
+          // Show purchased items
+          doc.fontSize(14)
+             .font('Helvetica-Bold')
+             .text('Items Purchased:');
+          
+          doc.moveDown(0.5);
+          
+          let itemsTotal = 0;
+          orderItems.forEach((item, index) => {
+            if (item.product_id != null) {
+              doc.fontSize(11)
+                 .font('Helvetica')
+                 .text(`${index + 1}. ${item.product_name}`)
+                 .text(`   Quantity: ${item.quantity} × RM${parseFloat(item.product_price).toFixed(2)} = RM${parseFloat(item.total_amount).toFixed(2)}`, { 
+                   indent: 20 
+                 });
+              
+              itemsTotal += parseFloat(item.total_amount);
+              doc.moveDown(0.3);
+            }
+          });
+          
+          doc.moveDown(0.5);
+          
+          // Purchase summary
+          doc.fontSize(12)
+             .font('Helvetica-Bold')
+             .text(`Items Subtotal: RM${itemsTotal.toFixed(2)}`);
+          
+          // Check if there's additional donation amount
+          const totalAmount = parseFloat(donation.amount || 0);
+          if (totalAmount > itemsTotal) {
+            const additionalDonation = totalAmount - itemsTotal;
+            doc.fontSize(11)
+               .font('Helvetica')
+               .text(`Additional Donation: RM${additionalDonation.toFixed(2)}`);
+          }
+          
+          doc.fontSize(14)
+             .font('Helvetica-Bold')
+             .text(`Total Amount: RM${totalAmount.toFixed(2)}`);
+          
+          // Show message if any
+          if (donation.message) {
+            doc.moveDown(0.5);
+            doc.fontSize(11)
+               .font('Helvetica-Oblique')
+               .text(`Note: ${donation.message}`);
+          }
+          
+          if (donation.stripe_payment_intent_id) {
+            doc.moveDown(0.5);
+            doc.fontSize(10)
+               .font('Helvetica')
+               .text(`Transaction ID: ${donation.stripe_payment_intent_id}`);
+          }
         } else {
+          // Regular donation
           doc.fontSize(16)
              .font('Helvetica-Bold')
              .text(`Amount: RM ${parseFloat(donation.amount || 0).toFixed(2)}`);
           
+          if (donation.message) {
+            doc.moveDown(0.5);
+            doc.fontSize(11)
+               .font('Helvetica-Oblique')
+               .text(`Message: ${donation.message}`);
+          }
+          
           if (donation.stripe_payment_intent_id) {
+            doc.moveDown(0.5);
             doc.fontSize(10)
                .font('Helvetica')
                .text(`Transaction ID: ${donation.stripe_payment_intent_id}`);
@@ -264,19 +351,31 @@ export default defineEventHandler(async (event) => {
         doc.moveDown(2);
 
         // Thank You Message
-        doc.fontSize(12)
-           .font('Helvetica-Oblique')
-           .text('Thank you for your generous donation!', { align: 'center' });
-        
-        doc.moveDown(0.5);
-        
-        doc.fontSize(10)
-           .font('Helvetica')
-           .text('Your contribution helps us continue our mission to make a positive impact in the community.', { align: 'center' });
+        if (isPurchase) {
+          doc.fontSize(12)
+             .font('Helvetica-Oblique')
+             .text('Thank you for your purchase and support!', { align: 'center' });
+          
+          doc.moveDown(0.5);
+          
+          doc.fontSize(10)
+             .font('Helvetica')
+             .text('Your purchase helps us continue our mission and makes a positive impact in the community.', { align: 'center' });
+        } else {
+          doc.fontSize(12)
+             .font('Helvetica-Oblique')
+             .text('Thank you for your generous donation!', { align: 'center' });
+          
+          doc.moveDown(0.5);
+          
+          doc.fontSize(10)
+             .font('Helvetica')
+             .text('Your contribution helps us continue our mission to make a positive impact in the community.', { align: 'center' });
+        }
         
         doc.moveDown(1);
         
-        doc.text('This receipt serves as proof of your donation.', { align: 'center' });
+        doc.text('This receipt serves as proof of your transaction.', { align: 'center' });
         
         doc.moveDown(2);
 
