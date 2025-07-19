@@ -11,10 +11,12 @@ export default defineEventHandler(async (event) => {
       event_id, 
       payment_method_id,
       order_items = [],
-      customer_info
+      customer_info,
+      // Legacy donation page fields (for backward compatibility)
+      type = 'onetime'
     } = body;
 
-    console.log('=== ENHANCED API ROUTE DEBUG START ===');
+    console.log('=== UNIFIED API ROUTE DEBUG START ===');
     console.log('Request body:', body);
 
     // Validate required fields
@@ -25,7 +27,20 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!customer_info?.firstName || !customer_info?.lastName || !customer_info?.email) {
+    // Handle customer info from both page formats
+    let customerInfo = customer_info;
+    
+    // If customer_info is missing but we have individual fields (donation page format)
+    if (!customerInfo && body.firstName && body.lastName && body.email) {
+      customerInfo = {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        email: body.email
+      };
+      console.log('🔄 Converted legacy customer format');
+    }
+
+    if (!customerInfo?.firstName || !customerInfo?.lastName || !customerInfo?.email) {
       throw createError({
         statusCode: 400,
         statusMessage: 'Customer information is required'
@@ -92,9 +107,24 @@ export default defineEventHandler(async (event) => {
       console.log('No user authentication available');
     }
 
+    // Handle order items - create if not provided (for donation page)
+    let processedOrderItems = order_items;
+    
+    if (processedOrderItems.length === 0) {
+      // This is likely from the donation page - create a donation item
+      processedOrderItems = [{
+        product_id: null,
+        product_name: 'Donation',
+        product_price: amountInMYR,
+        quantity: 1,
+        total_amount: amountInMYR
+      }];
+      console.log('🎁 Created donation item for simple donation');
+    }
+
     // Determine order type based on items
-    const hasProducts = order_items.some(item => item.product_id);
-    const hasDonations = order_items.some(item => !item.product_id);
+    const hasProducts = processedOrderItems.some(item => item.product_id);
+    const hasDonations = processedOrderItems.some(item => !item.product_id);
     let orderType = 'donation';
     
     if (hasProducts && hasDonations) {
@@ -103,12 +133,17 @@ export default defineEventHandler(async (event) => {
       orderType = 'purchase';
     }
 
+    console.log(`📦 Order type: ${orderType}, Items: ${processedOrderItems.length}`);
+
     // Create description based on order type and items
     let description = '';
     if (orderType === 'donation') {
       description = `Donation of RM${amountInMYR} to Jing Sun Welfare Society`;
+      if (message) {
+        description += ` - ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`;
+      }
     } else if (orderType === 'purchase') {
-      const productNames = order_items
+      const productNames = processedOrderItems
         .filter(item => item.product_id)
         .map(item => `${item.product_name} (x${item.quantity})`)
         .join(', ');
@@ -126,26 +161,28 @@ export default defineEventHandler(async (event) => {
       },
       metadata: {
         donor_id: user?.id?.toString() || 'anonymous',
-        customer_email: customer_info.email,
-        customer_name: `${customer_info.firstName} ${customer_info.lastName}`,
+        customer_email: customerInfo.email,
+        customer_name: `${customerInfo.firstName} ${customerInfo.lastName}`,
         category: category || 'general',
-        type: 'onetime',
+        type: type || 'onetime',
         order_type: orderType,
         event_id: event_id?.toString() || '',
         amount_myr: amountInMYR.toString(),
-        total_items: order_items.length.toString()
+        total_items: processedOrderItems.length.toString(),
+        source: hasProducts ? 'event_payment' : 'donation_page' // Track source
       },
       description: description,
-      receipt_email: customer_info.email,
+      receipt_email: customerInfo.email,
     };
 
     console.log(`Creating payment intent for RM${amountInMYR} (${amountInSen} sen)`);
     console.log('Order type:', orderType);
-    console.log('Items:', order_items.length);
+    console.log('Items:', processedOrderItems.length);
+    console.log('Source:', paymentIntentData.metadata.source);
 
     // Try immediate confirmation if payment method is provided
     let paymentIntent;
-    let initialStatus = 'pending';
+    let initialStatus = 'completed';
     let requiresAction = false;
     
     if (payment_method_id) {
@@ -226,9 +263,9 @@ export default defineEventHandler(async (event) => {
       amount: amountInMYR,
       currency: 'myr',
       category: category || 'general',
-      type: 'onetime',
+      type: type || 'onetime',
       order_type: orderType,
-      total_items: order_items.length,
+      total_items: processedOrderItems.length,
       status: initialStatus,
       message: message || null,
       stripe_payment_intent_id: paymentIntent.id,
@@ -267,10 +304,10 @@ export default defineEventHandler(async (event) => {
     console.log('✅ Donation record created:', donation.id);
 
     // Create order items if any
-    if (order_items.length > 0) {
+    if (processedOrderItems.length > 0) {
       console.log('📦 Creating order items...');
       
-      const orderItemsData = order_items.map(item => ({
+      const orderItemsData = processedOrderItems.map(item => ({
         donation_id: donation.id,
         product_id: item.product_id || null,
         product_name: item.product_name,
@@ -312,7 +349,7 @@ export default defineEventHandler(async (event) => {
       if (orderType === 'purchase' || orderType === 'mixed') {
         console.log('📦 Updating product stock...');
         
-        const productUpdates = order_items
+        const productUpdates = processedOrderItems
           .filter(item => item.product_id)
           .map(async (item) => {
             // Get current stock
@@ -351,7 +388,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    console.log('=== ENHANCED API ROUTE DEBUG END ===');
+    console.log('=== UNIFIED API ROUTE DEBUG END ===');
 
     // Return comprehensive response
     const response = {
@@ -361,11 +398,12 @@ export default defineEventHandler(async (event) => {
       currency: 'myr',
       status: initialStatus,
       order_type: orderType,
-      total_items: order_items.length,
+      total_items: processedOrderItems.length,
       payment_intent_id: paymentIntent.id,
       payment_intent_status: paymentIntent.status,
       requires_action: requiresAction,
-      next_action: paymentIntent.next_action || null
+      next_action: paymentIntent.next_action || null,
+      source: paymentIntentData.metadata.source
     };
 
     console.log('✅ Returning response:', response);

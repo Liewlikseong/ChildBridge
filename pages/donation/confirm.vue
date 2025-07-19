@@ -45,7 +45,7 @@
                   />
                 </div>
                 <p class="text-sm text-gray-500 mt-1">
-                  Any amount is appreciated (Minimum: RM 10.00)
+                  Any amount is appreciated (Minimum: RM {{ donationDetails.type === 'subscription' ? '25.00' : '10.00' }})
                 </p>
               </div>
 
@@ -170,10 +170,13 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Processing...
+                  {{ donationDetails.type === 'subscription' ? 'Setting up...' : 'Processing...' }}
                 </span>
                 <span v-else>
-                  Complete Donation (RM{{ finalAmount }}{{ donationDetails.type === 'subscription' ? '/month' : '' }})
+                  {{ donationDetails.type === 'subscription' 
+                    ? `Set up Monthly Donation (RM${finalAmount}/month)` 
+                    : `Complete Donation (RM${finalAmount})` 
+                  }}
                 </span>
               </button>
 
@@ -272,7 +275,8 @@ const finalAmount = computed(() => {
 });
 
 const canSubmit = computed(() => {
-  return parseFloat(finalAmount.value) >= 10 && 
+  const minimumAmount = donationDetails.value.type === 'subscription' ? 25 : 10;
+  return parseFloat(finalAmount.value) >= minimumAmount && 
          paymentForm.value.firstName.trim() && 
          paymentForm.value.lastName.trim() && 
          paymentForm.value.email.trim() && 
@@ -285,6 +289,17 @@ const canSubmit = computed(() => {
 const getImpactMessage = () => {
   const amount = parseFloat(finalAmount.value) || 0;
   
+  if (donationDetails.value.type === 'subscription') {
+    if (amount >= 100) {
+      return 'Your monthly donation can provide ongoing healthcare, education, and nutrition support for multiple children each month.';
+    } else if (amount >= 50) {
+      return 'Your monthly donation can provide consistent educational supplies and meals for children throughout the year.';
+    } else if (amount >= 25) {
+      return 'Your monthly donation provides steady support for essential needs like food and basic supplies.';
+    }
+    return 'Your monthly commitment, no matter the size, creates lasting positive change in children\'s lives.';
+  }
+  
   if (amount >= 400) {
     return 'Your donation can cover healthcare check-ups for multiple children and provide educational supplies for several months.';
   } else if (amount >= 200) {
@@ -295,6 +310,12 @@ const getImpactMessage = () => {
     return 'Your donation can help provide nutritious meals and basic supplies for children in need.';
   }
   return 'Every donation, no matter the size, makes a meaningful difference in a child\'s life.';
+};
+
+// Redirect to login function
+const redirectToLogin = () => {
+  // You can customize this based on your app's login route
+  navigateTo('/auth/login?redirect=' + encodeURIComponent(route.fullPath));
 };
 
 // Initialize Stripe
@@ -349,8 +370,8 @@ const setupStripe = () => {
   }
 };
 
-// Process donation
-const processDonation = async () => {
+// Process one-time donation
+const processOnTimeDonation = async () => {
   if (!canSubmit.value || !stripe || !cardElement) return;
 
   const amount = parseFloat(finalAmount.value);
@@ -362,88 +383,199 @@ const processDonation = async () => {
   processing.value = true;
 
   try {
-    console.log('🔍 Processing donation...');
+    console.log('🔍 Processing one-time donation...');
     
+    // Send data in the format your unified API expects
     const donationData = {
       amount: amount,
       currency: 'myr',
-      type: donationDetails.value.type,
-      category: donationDetails.value.category,
+      category: donationDetails.value.category || 'general',
+      type: 'onetime', // Explicitly set type
       message: donationMessage.value || null,
-      event_id: donationDetails.value.event_id
+      event_id: donationDetails.value.event_id || null,
+      // Add customer_info object that your API expects
+      customer_info: {
+        firstName: paymentForm.value.firstName,
+        lastName: paymentForm.value.lastName,
+        email: paymentForm.value.email
+      }
     };
 
-    let response;
+    console.log('🎯 Sending donation data:', donationData);
 
-    if (donationDetails.value.type === 'onetime') {
-      // One-time donation
-      response = await $fetch('/api/stripe/create-payment-intent', {
-        method: 'POST',
-        body: donationData
-      });
+    const response = await $fetch('/api/stripe/create-payment-intent', {
+      method: 'POST',
+      body: donationData
+    });
 
-      if (!response.client_secret) {
-        throw new Error('Failed to create payment intent');
+    console.log('🎯 API Response:', response);
+
+    if (!response.client_secret) {
+      console.error('❌ No client_secret in response!');
+      throw new Error('Failed to create payment intent - no client_secret returned');
+    }
+
+    console.log('💳 Confirming payment...');
+    
+    const { error, paymentIntent } = await stripe.confirmCardPayment(response.client_secret, {
+      payment_method: {
+        card: cardElement,
+        billing_details: {
+          name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
+          email: paymentForm.value.email,
+        },
       }
+    });
 
-      const { error, paymentIntent } = await stripe.confirmCardPayment(response.client_secret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
-            email: paymentForm.value.email,
-          },
-        }
-      });
+    if (error) {
+      console.error('❌ Payment confirmation failed:', error);
+      throw new Error(error.message);
+    }
 
-      if (error) {
-        throw new Error(error.message);
-      }
+    console.log('✅ Payment confirmed:', paymentIntent);
 
-      if (paymentIntent.status === 'succeeded') {
-        showSuccessModal.value = true;
-      } else {
-        throw new Error(`Payment not completed. Status: ${paymentIntent.status}`);
-      }
-
-    } else {
-      // Subscription donation
-      response = await $fetch('/api/stripe/create-subscription', {
-        method: 'POST',
-        body: {
-          ...donationData,
-          payment_method: await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-            billing_details: {
-              name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
-              email: paymentForm.value.email,
-            },
-          })
-        }
-      });
-
-      if (response.requires_action) {
-        const { error } = await stripe.confirmCardPayment(response.client_secret);
-        if (error) {
-          throw new Error(error.message);
-        }
-      }
-
+    if (paymentIntent.status === 'succeeded') {
+      console.log('🎉 Payment succeeded!');
       showSuccessModal.value = true;
+    } else {
+      throw new Error(`Payment not completed. Status: ${paymentIntent.status}`);
     }
 
   } catch (error) {
     console.error('❌ Donation error:', error);
     
     let errorMessage = error.message;
+    
+    // Better error handling
     if (error.name === 'FetchError') {
       errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.cause?.code === 'FETCH_ERROR') {
+      errorMessage = 'Unable to connect to payment server. Please try again.';
+    } else if (error.message.includes('fetch')) {
+      errorMessage = 'Connection error. Please check your internet and try again.';
     }
     
     alert(`Donation failed: ${errorMessage}`);
   } finally {
     processing.value = false;
+  }
+};
+
+// Process subscription
+const processSubscription = async () => {
+  if (!canSubmit.value || !stripe || !cardElement) return;
+
+  const amount = parseFloat(finalAmount.value);
+  if (amount < 25) {
+    alert('Minimum monthly donation amount is RM 25.00');
+    return;
+  }
+
+  if (!user.value) {
+    alert('Please sign in to set up a monthly donation.');
+    redirectToLogin();
+    return;
+  }
+
+  processing.value = true;
+
+  try {
+    console.log('🔍 Processing subscription...');
+    
+    // Create payment method first
+    const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: {
+        name: `${paymentForm.value.firstName} ${paymentForm.value.lastName}`,
+        email: paymentForm.value.email,
+      },
+    });
+
+    if (pmError) {
+      throw new Error(pmError.message);
+    }
+
+    console.log('✅ Payment method created:', paymentMethod.id);
+
+    // Create subscription - send data in format your API expects
+    const subscriptionData = {
+      amount: amount,
+      currency: 'myr',
+      category: donationDetails.value.category || 'general',
+      message: donationMessage.value || null,
+      event_id: donationDetails.value.event_id || null,
+      payment_method: paymentMethod,
+      // Add customer info for consistency
+      customer_info: {
+        firstName: paymentForm.value.firstName,
+        lastName: paymentForm.value.lastName,
+        email: paymentForm.value.email
+      }
+    };
+
+    console.log('🎯 Sending subscription data:', subscriptionData);
+
+    const response = await $fetch('/api/stripe/create-subscription', {
+      method: 'POST',
+      body: subscriptionData
+    });
+
+    console.log('🔍 Subscription response:', response);
+
+    // Handle additional authentication if required (3D Secure, etc.)
+    if (response.requires_action && response.client_secret) {
+      console.log('🔍 Confirming payment with additional authentication...');
+      
+      const { error: confirmError } = await stripe.confirmCardPayment(response.client_secret);
+      
+      if (confirmError) {
+        throw new Error(confirmError.message);
+      }
+      
+      console.log('✅ Payment confirmed with additional authentication');
+    }
+
+    // Check final status
+    if (response.status === 'active' || response.status === 'trialing') {
+      console.log('✅ Subscription successfully created and active');
+      showSuccessModal.value = true;
+    } else if (response.status === 'incomplete') {
+      throw new Error('Subscription setup incomplete. Please try again or contact support.');
+    } else {
+      console.log('⚠️ Subscription created but status:', response.status);
+      showSuccessModal.value = true; // Still show success as subscription is created
+    }
+
+  } catch (error) {
+    console.error('❌ Subscription error:', error);
+    
+    let errorMessage = error.message;
+    
+    // Better error handling (matching the donation function)
+    if (error.name === 'FetchError') {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.cause?.code === 'FETCH_ERROR') {
+      errorMessage = 'Unable to connect to payment server. Please try again.';
+    } else if (error.message.includes('fetch')) {
+      errorMessage = 'Connection error. Please check your internet and try again.';
+    }
+    
+    alert(`Subscription setup failed: ${errorMessage}`);
+  } finally {
+    processing.value = false;
+  }
+};
+
+// Main processing function that determines which to call
+const processDonation = async () => {
+  if (donationDetails.value.type === 'onetime') {
+    await processOnTimeDonation();
+  } else if (donationDetails.value.type === 'subscription') {
+    await processSubscription();
+  } else {
+    console.error('Unknown donation type:', donationDetails.value.type);
+    alert('Invalid donation type. Please try again.');
   }
 };
 

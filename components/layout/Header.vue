@@ -27,6 +27,7 @@
           <NuxtLink to="/donate" class="navbar-link">Donate</NuxtLink>
           <NuxtLink to="/updates" class="navbar-link">Updates</NuxtLink>
           <NuxtLink to="/events" class="navbar-link">Events</NuxtLink>
+          <NuxtLink to="/leaderboard" class="navbar-link">Leader Board</NuxtLink>
           <template v-if="!user">
             <NuxtLink to="/auth/login" class="btn btn-outline ml-4">Login</NuxtLink>
             <NuxtLink to="/auth/register" class="btn btn-primary ml-2">Sign Up</NuxtLink>
@@ -70,6 +71,7 @@
                 </div>
                 <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Profile</NuxtLink>
                 <NuxtLink to="/donations" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">My Donations</NuxtLink>
+                <NuxtLink to="/volunteers" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Volunteers Applied</NuxtLink>
                 <NuxtLink to="/messages" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Messages</NuxtLink>
                 <NuxtLink v-if="['admin', 'head_admin'].includes(profile?.role)" to="/admin/profile" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Admin</NuxtLink>
                 <NuxtLink v-if="profile?.role === 'staff'" to="/staff/dashboard" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Staff</NuxtLink>
@@ -88,6 +90,7 @@
         <NuxtLink to="/donate" class="block py-2 text-neutral-700">Donate</NuxtLink>
         <NuxtLink to="/updates" class="block py-2 text-neutral-700">Updates</NuxtLink>
         <NuxtLink to="/events" class="block py-2 text-neutral-700">Events</NuxtLink>
+        <NuxtLink to="/leaderboard" class="block py-2 text-neutral-700">Leader Board</NuxtLink>
         <template v-if="!user">
           <NuxtLink to="/auth/login" class="block py-2 text-neutral-700">Login</NuxtLink>
           <NuxtLink to="/auth/register" class="block py-2 text-primary-600 font-medium">Sign Up</NuxtLink>
@@ -119,6 +122,7 @@
             
             <NuxtLink to="/profile" class="block py-2 text-neutral-700">Profile</NuxtLink>
             <NuxtLink to="/donations" class="block py-2 text-neutral-700">My Donations</NuxtLink>
+            <NuxtLink to="/volunteers" class="block py-2 text-neutral-700">Volunteers Applied</NuxtLink>
             <NuxtLink to="/messages" class="block py-2 text-neutral-700">Messages</NuxtLink>
             <NuxtLink v-if="['admin', 'head_admin'].includes(profile?.role)" to="/admin/profile" class="block py-2 text-neutral-700">Admin</NuxtLink>
             <NuxtLink v-if="profile?.role === 'staff'" to="/staff/dashboard" class="block py-2 text-neutral-700">Staff</NuxtLink>
@@ -239,4 +243,4 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
-</script> 
+</script>
