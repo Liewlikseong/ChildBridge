@@ -52,24 +52,14 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            @click="signInWithGoogle"
-            class="btn btn-outline flex justify-center items-center"
-          >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2" />
-            Google
-          </button>
-          <button
-            type="button"
-            @click="signInWithFacebook"
-            class="btn btn-outline flex justify-center items-center"
-          >
-            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" class="w-5 h-5 mr-2" />
-            Facebook
-          </button>
-        </div>
+        <button
+          type="button"
+          @click="signInWithGoogle"
+          class="w-full btn btn-outline flex justify-center items-center"
+        >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2" />
+          Google
+        </button>
 
         <p class="text-center text-sm text-neutral-600">
           Don't have an account?
@@ -126,21 +116,6 @@ const signInWithGoogle = async () => {
     if (authError) throw authError;
   } catch (err) {
     error.value = 'Failed to sign in with Google';
-  }
-};
-
-const signInWithFacebook = async () => {
-  try {
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    });
-
-    if (authError) throw authError;
-  } catch (err) {
-    error.value = 'Failed to sign in with Facebook';
   }
 };
 </script>

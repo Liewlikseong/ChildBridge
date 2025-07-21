@@ -19,7 +19,7 @@
               Connect with children at Jing Sun Welfare Society and make a lasting impact through transparent donations and direct communication.
             </p>
             <div class="flex flex-wrap gap-4 pt-4">
-              <NuxtLink to="/donate" class="group">
+              <a @click="handleProtectedNavigation('/donate')" class="group cursor-pointer">
                 <button class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                   <span class="flex items-center">
                     Donate Now
@@ -28,7 +28,7 @@
                     </svg>
                   </span>
                 </button>
-              </NuxtLink>
+              </a>
               
               <NuxtLink to="/about">
                 <button class="border-2 border-white text-white hover:bg-white hover:text-blue-900 font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105">
@@ -191,12 +191,12 @@
             <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Recent Updates</h2>
             <p class="text-gray-600">Stay connected with the latest news from our community</p>
           </div>
-          <NuxtLink to="/updates" class="group text-blue-600 hover:text-blue-700 font-semibold flex items-center transition-colors duration-300">
+          <a @click="handleProtectedNavigation('/updates')" class="group text-blue-600 hover:text-blue-700 font-semibold flex items-center transition-colors duration-300 cursor-pointer">
             View all updates
             <svg class="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-          </NuxtLink>
+          </a>
         </div>
         
         <div v-if="updateError" class="text-center py-12">
@@ -252,15 +252,15 @@
                 {{ truncateText(update.content, 120) }}
               </p>
               
-              <NuxtLink 
-                :to="`/updates/${update.id}`" 
-                class="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-300 group"
+              <a
+                @click="handleProtectedNavigation(`/updates/${update.id}`)"
+                class="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-300 group cursor-pointer"
               >
                 Read more
                 <svg class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-              </NuxtLink>
+              </a>
             </div>
           </article>
         </div>
@@ -293,7 +293,7 @@
         </p>
         
         <div class="flex flex-wrap justify-center gap-6">
-          <NuxtLink to="/donate" class="group">
+          <a @click="handleProtectedNavigation('/donate')" class="group cursor-pointer">
             <button class="bg-white text-blue-600 hover:bg-gray-100 font-bold px-10 py-4 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
               <span class="flex items-center">
                 Donate Now
@@ -302,7 +302,7 @@
                 </svg>
               </span>
             </button>
-          </NuxtLink>
+          </a>
 
           <NuxtLink to="/auth/register">
             <button class="border-2 border-white hover:bg-white hover:text-blue-600 text-white font-bold px-10 py-4 rounded-full transition-all duration-300 transform hover:scale-105">
@@ -321,6 +321,17 @@ import { useSupabaseClient, useSupabaseUser } from '#imports';
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
+
+// Function to handle navigation for protected routes
+const handleProtectedNavigation = (path) => {
+  if (!user.value) {
+    // Redirect to login page if user is not authenticated
+    navigateTo('/auth/login');
+  } else {
+    // User is logged in, navigate normally
+    navigateTo(path);
+  }
+};
 
 // Page meta
 definePageMeta({

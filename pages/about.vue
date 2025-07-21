@@ -252,7 +252,7 @@
           </p>
           
           <div class="flex flex-col sm:flex-row justify-center gap-6">
-            <NuxtLink to="/donate" class="group">
+            <a @click="handleProtectedNavigation('/donate')" class="group cursor-pointer">
               <button class="bg-white text-blue-600 hover:bg-gray-100 font-bold px-10 py-4 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-2xl text-lg">
                 <span class="flex items-center justify-center">
                   <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,13 +264,13 @@
                   </svg>
                 </span>
               </button>
-            </NuxtLink>
+            </a>
             
-            <NuxtLink to="/messages">
+            <a @click="handleProtectedNavigation('/messages')" class="cursor-pointer">
               <button class="border-2 border-white hover:bg-white/10 text-white font-bold px-10 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 text-lg">
                 Contact Us
               </button>
-            </NuxtLink>
+            </a>
           </div>
         </div>
       </div>
@@ -279,8 +279,22 @@
 </template>
 
 <script setup>
+import { useSupabaseUser } from '#imports';
+
+const user = useSupabaseUser();
+
+// Function to handle navigation for protected routes
+const handleProtectedNavigation = (path) => {
+  if (!user.value) {
+    // Redirect to login page if user is not authenticated
+    navigateTo('/auth/login');
+  } else {
+    // User is logged in, navigate normally
+    navigateTo(path);
+  }
+};
+
 definePageMeta({
   layout: 'default'
 });
-
 </script>
