@@ -314,7 +314,7 @@
               @click="goToDonations"
               class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              Back to Donations
+              View Your Donations History
             </button>
             <button
               @click="closeModal"
