@@ -24,10 +24,10 @@
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-2">
           <NuxtLink to="/about" class="navbar-link">About</NuxtLink>
-          <NuxtLink to="/donate" class="navbar-link">Donate</NuxtLink>
-          <NuxtLink to="/updates" class="navbar-link">Updates</NuxtLink>
-          <NuxtLink to="/events" class="navbar-link">Events</NuxtLink>
-          <NuxtLink to="/leaderboard" class="navbar-link">Leader Board</NuxtLink>
+          <a @click="handleProtectedNavigation('/donate')" class="navbar-link cursor-pointer">Donate</a>
+          <a @click="handleProtectedNavigation('/updates')" class="navbar-link cursor-pointer">Updates</a>
+          <a @click="handleProtectedNavigation('/events')" class="navbar-link cursor-pointer">Events</a>
+          <a @click="handleProtectedNavigation('/leaderboard')" class="navbar-link cursor-pointer">Leader Board</a>
           <template v-if="!user">
             <NuxtLink to="/auth/login" class="btn btn-outline ml-4">Login</NuxtLink>
             <NuxtLink to="/auth/register" class="btn btn-primary ml-2">Sign Up</NuxtLink>
@@ -87,10 +87,10 @@
     <div v-if="mobileMenuOpen" class="md:hidden">
       <nav class="px-4 pt-2 pb-4 space-y-1 bg-white border-t border-neutral-200">
         <NuxtLink to="/about" class="block py-2 text-neutral-700">About</NuxtLink>
-        <NuxtLink to="/donate" class="block py-2 text-neutral-700">Donate</NuxtLink>
-        <NuxtLink to="/updates" class="block py-2 text-neutral-700">Updates</NuxtLink>
-        <NuxtLink to="/events" class="block py-2 text-neutral-700">Events</NuxtLink>
-        <NuxtLink to="/leaderboard" class="block py-2 text-neutral-700">Leader Board</NuxtLink>
+        <a @click="handleProtectedNavigation('/donate')" class="block py-2 text-neutral-700 cursor-pointer">Donate</a>
+        <a @click="handleProtectedNavigation('/updates')" class="block py-2 text-neutral-700 cursor-pointer">Updates</a>
+        <a @click="handleProtectedNavigation('/events')" class="block py-2 text-neutral-700 cursor-pointer">Events</a>
+        <a @click="handleProtectedNavigation('/leaderboard')" class="block py-2 text-neutral-700 cursor-pointer">Leader Board</a>
         <template v-if="!user">
           <NuxtLink to="/auth/login" class="block py-2 text-neutral-700">Login</NuxtLink>
           <NuxtLink to="/auth/register" class="block py-2 text-primary-600 font-medium">Sign Up</NuxtLink>
@@ -146,6 +146,19 @@ const mobileMenuOpen = ref(false);
 const userMenuOpen = ref(false);
 const userMenuContainer = ref(null);
 const imageError = ref(false);
+
+// Function to handle navigation for protected routes
+const handleProtectedNavigation = (path) => {
+  if (!user.value) {
+    // Close mobile menu if open
+    mobileMenuOpen.value = false;
+    // Redirect to login page
+    navigateTo('/auth/login');
+  } else {
+    // User is logged in, navigate normally
+    navigateTo(path);
+  }
+};
 
 // Computed properties for user display - now using the profile from useProfile composable
 const userName = computed(() => {

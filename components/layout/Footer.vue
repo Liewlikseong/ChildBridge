@@ -26,8 +26,10 @@
           <ul class="space-y-2">
             <li><NuxtLink to="/" class="text-neutral-400 hover:text-white transition-colors">Home</NuxtLink></li>
             <li><NuxtLink to="/about" class="text-neutral-400 hover:text-white transition-colors">About Us</NuxtLink></li>
-            <li><NuxtLink to="/donate" class="text-neutral-400 hover:text-white transition-colors">Donate</NuxtLink></li>
-            <li><NuxtLink to="/updates" class="text-neutral-400 hover:text-white transition-colors">Updates</NuxtLink></li>
+            <li><a @click="handleProtectedNavigation('/donate')" class="text-neutral-400 hover:text-white transition-colors cursor-pointer">Donate</a></li>
+            <li><a @click="handleProtectedNavigation('/updates')" class="text-neutral-400 hover:text-white transition-colors cursor-pointer">Updates</a></li>
+            <li><a @click="handleProtectedNavigation('/events')" class="text-neutral-400 hover:text-white transition-colors cursor-pointer">Events</a></li>
+            <li><a @click="handleProtectedNavigation('/leaderboard')" class="text-neutral-400 hover:text-white transition-colors cursor-pointer">Leader Board</a></li>
           </ul>
         </div>
         
@@ -72,5 +74,18 @@
 </template>
 
 <script setup>
-// Footer component
+import { useSupabaseUser } from '#imports';
+
+const user = useSupabaseUser();
+
+// Function to handle navigation for protected routes
+const handleProtectedNavigation = (path) => {
+  if (!user.value) {
+    // Redirect to login page if user is not authenticated
+    navigateTo('/auth/login');
+  } else {
+    // User is logged in, navigate normally
+    navigateTo(path);
+  }
+};
 </script>

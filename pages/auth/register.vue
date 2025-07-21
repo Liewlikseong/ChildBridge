@@ -8,34 +8,6 @@
         </p>
       </div>
 
-      <!-- Role Selection -->
-      <div class="grid grid-cols-2 gap-4">
-        <button
-          @click="formData.role = 'donor'"
-          :class="[
-            'p-4 rounded-lg text-center transition-all',
-            formData.role === 'donor'
-              ? 'bg-primary-50 border-2 border-primary-500 text-primary-700'
-              : 'border-2 border-neutral-200 hover:bg-neutral-50'
-          ]"
-        >
-          <div class="font-medium mb-2">Donor</div>
-          <p class="text-sm text-neutral-600">Support children through donations</p>
-        </button>
-        <button
-          @click="formData.role = 'staff'"
-          :class="[
-            'p-4 rounded-lg text-center transition-all',
-            formData.role === 'staff'
-              ? 'bg-primary-50 border-2 border-primary-500 text-primary-700'
-              : 'border-2 border-neutral-200 hover:bg-neutral-50'
-          ]"
-        >
-          <div class="font-medium mb-2">Staff</div>
-          <p class="text-sm text-neutral-600">Manage and coordinate activities</p>
-        </button>
-      </div>
-
       <form @submit.prevent="register" class="mt-8 space-y-6">
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -218,24 +190,14 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            @click="signInWithGoogle"
-            class="btn btn-outline flex justify-center items-center"
-          >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2" />
-            Google
-          </button>
-          <button
-            type="button"
-            @click="signInWithFacebook"
-            class="btn btn-outline flex justify-center items-center"
-          >
-            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" class="w-5 h-5 mr-2" />
-            Facebook
-          </button>
-        </div>
+        <button
+          type="button"
+          @click="signInWithGoogle"
+          class="w-full btn btn-outline flex justify-center items-center"
+        >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2" />
+          Google
+        </button>
 
         <p class="text-center text-sm text-neutral-600">
           Already have an account?
@@ -274,7 +236,7 @@ const formData = ref({
   occupation: '',
   agreeToTerms: false,
   avatarUrl: '',
-  role: 'donor' // Default role
+  role: 'donor' // Default role set to donor
 });
 
 // Avatar upload handler
@@ -429,22 +391,6 @@ const signInWithGoogle = async () => {
   } catch (err) {
     console.error('Google sign-in error:', err);
     error.value = 'Failed to sign in with Google';
-  }
-};
-
-const signInWithFacebook = async () => {
-  try {
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    });
-
-    if (authError) throw authError;
-  } catch (err) {
-    console.error('Facebook sign-in error:', err);
-    error.value = 'Failed to sign in with Facebook';
   }
 };
 
