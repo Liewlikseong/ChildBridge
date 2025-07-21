@@ -1,178 +1,269 @@
 <template>
-  <div>
-    <!-- Hero Section -->
-    <section class="bg-primary-900 text-white py-16">
-      <div class="container-custom">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <!-- Enhanced Hero Section -->
+    <section class="bg-gradient-to-r from-emerald-900 via-teal-900 to-cyan-900 text-white py-16 relative overflow-hidden">
+      <!-- Background decoration -->
+      <div class="absolute inset-0 bg-black/20"></div>
+      <div class="absolute top-0 left-0 w-full h-full">
+        <div class="absolute top-10 left-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-10 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+      </div>
+      
+      <div class="container-custom relative z-10">
         <div class="max-w-3xl mx-auto text-center">
-          <h1 class="text-4xl md:text-5xl font-bold mb-6">Complete Your Donation</h1>
-          <p class="text-xl text-primary-100">Your generous contribution makes a difference in children's lives.</p>
+          <div class="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium mb-6 border border-white/20">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            Secure Payment
+          </div>
+          <h1 class="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">
+            Complete Your Donation
+          </h1>
+          <p class="text-xl text-emerald-100">
+            Your generous contribution makes a difference in children's lives.
+          </p>
         </div>
       </div>
     </section>
 
-    <!-- Payment Form Section -->
-    <section class="py-16 bg-gray-50">
+    <!-- Enhanced Payment Form Section -->
+    <section class="py-16 relative">
       <div class="container-custom">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-6xl mx-auto">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <!-- Donation Summary -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-bold mb-6">Donation Summary</h2>
+            <!-- Enhanced Donation Summary -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+              <div class="flex items-center mb-8">
+                <div class="p-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl mr-4">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                </div>
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  Donation Summary
+                </h2>
+              </div>
               
-              <!-- Donation Details -->
-              <div class="border-b border-gray-200 pb-4 mb-4">
-                <h3 class="text-lg font-semibold mb-2">{{ donationDetails.category || 'General Fund' }}</h3>
-                <p class="text-gray-600 mb-2">Type: {{ donationDetails.type === 'onetime' ? 'One-time Donation' : 'Monthly Donation' }}</p>
-                <p class="text-gray-600">Date: {{ new Date().toLocaleDateString() }}</p>
+              <!-- Enhanced Donation Details -->
+              <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200 mb-6">
+                <h3 class="text-xl font-bold text-emerald-800 mb-4">{{ donationDetails.category || 'General Fund' }}</h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-emerald-700 font-medium">Type:</span>
+                    <span class="font-bold text-emerald-800">{{ donationDetails.type === 'onetime' ? 'One-time Donation' : 'Monthly Donation' }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-emerald-700 font-medium">Date:</span>
+                    <span class="font-bold text-emerald-800">{{ new Date().toLocaleDateString() }}</span>
+                  </div>
+                </div>
               </div>
 
-              <!-- Amount Section -->
+              <!-- Enhanced Amount Section -->
               <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Donation Amount
-                </label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">RM</span>
+                <div class="flex items-center mb-4">
+                  <div class="p-2 bg-blue-500 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                    </svg>
+                  </div>
+                  <label class="text-lg font-bold text-gray-800">
+                    Donation Amount
+                  </label>
+                </div>
+                <div class="flex items-center bg-white border-2 border-blue-200 rounded-xl focus-within:ring-4 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all duration-300">
+                  <span class="px-4 py-4 text-blue-600 font-bold text-lg bg-blue-50 border-r border-blue-200">RM</span>
                   <input
                     v-model="customAmount"
                     type="number"
                     min="10"
                     step="0.01"
                     :disabled="!!fixedAmount"
-                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
-                    :placeholder="fixedAmount ? fixedAmount : 'Enter amount (Min: RM 10)'"
+                    class="flex-1 px-4 py-4 border-0 rounded-r-xl focus:ring-0 focus:outline-none text-lg font-bold bg-white disabled:bg-gray-100 disabled:text-gray-500"
+                    :placeholder="fixedAmount ? fixedAmount : 'Enter amount'"
                   />
                 </div>
-                <p class="text-sm text-gray-500 mt-1">
+                <p class="text-sm text-blue-600 mt-3 font-medium bg-blue-50 rounded-lg p-3">
                   Any amount is appreciated (Minimum: RM {{ donationDetails.type === 'subscription' ? '25.00' : '10.00' }})
                 </p>
               </div>
 
-              <!-- Donation Message -->
+              <!-- Enhanced Donation Message -->
               <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Personal Message (Optional)
-                </label>
+                <div class="flex items-center mb-4">
+                  <div class="p-2 bg-purple-500 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                    </svg>
+                  </div>
+                  <label class="text-lg font-bold text-gray-800">
+                    Personal Message (Optional)
+                  </label>
+                </div>
                 <textarea
                   v-model="donationMessage"
-                  rows="3"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Leave a message with your donation..."
+                  rows="4"
+                  class="w-full px-4 py-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white resize-none"
+                  placeholder="Leave a heartfelt message with your donation..."
                 ></textarea>
               </div>
 
-              <!-- Impact Statement -->
-              <div class="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
-                <h4 class="font-semibold text-primary-800 mb-2">Your Impact</h4>
-                <p class="text-sm text-primary-700">
+              <!-- Enhanced Impact Statement -->
+              <div class="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
+                <div class="flex items-center mb-4">
+                  <div class="p-2 bg-orange-500 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </div>
+                  <h4 class="font-bold text-lg text-orange-800">Your Impact</h4>
+                </div>
+                <p class="text-orange-700 leading-relaxed">
                   {{ getImpactMessage() }}
                 </p>
               </div>
 
-              <!-- Total -->
-              <div class="border-t border-gray-200 pt-4">
-                <div class="flex justify-between items-center text-xl font-bold">
-                  <span>Total{{ donationDetails.type === 'subscription' ? '/month' : '' }}:</span>
-                  <span class="text-primary-600">RM{{ finalAmount }}</span>
+              <!-- Enhanced Total -->
+              <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white">
+                <div class="flex justify-between items-center">
+                  <span class="text-xl font-semibold">Total{{ donationDetails.type === 'subscription' ? '/month' : '' }}:</span>
+                  <span class="text-3xl font-bold">RM{{ finalAmount }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Payment Form -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-bold mb-6">Payment Information</h2>
+            <!-- Enhanced Payment Form -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+              <div class="flex items-center mb-8">
+                <div class="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl mr-4">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                  </svg>
+                </div>
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  Payment Information
+                </h2>
+              </div>
               
-              <!-- Donor Information -->
-              <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-4">Contact Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Enhanced Donor Information -->
+              <div class="mb-8">
+                <div class="flex items-center mb-6">
+                  <div class="p-2 bg-green-500 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-bold text-gray-800">Contact Information</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">
                       First Name *
                     </label>
                     <input
                       v-model="paymentForm.firstName"
                       type="text"
                       required
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white font-medium"
                       placeholder="John"
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">
                       Last Name *
                     </label>
                     <input
                       v-model="paymentForm.lastName"
                       type="text"
                       required
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white font-medium"
                       placeholder="Doe"
                     />
                   </div>
                 </div>
-                <div class="mt-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                <div class="mt-6">
+                  <label class="block text-sm font-bold text-gray-700 mb-3">
                     Email Address *
                   </label>
                   <input
                     v-model="paymentForm.email"
                     type="email"
                     required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white font-medium"
                     placeholder="john@example.com"
                   />
                 </div>
               </div>
 
-              <!-- Stripe Card Element -->
-              <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-4">Payment Method</h3>
-                <div class="border border-gray-300 rounded-lg p-4">
-                  <div id="card-element" class="min-h-[40px]">
-                    <!-- Stripe Elements will create form elements here -->
+              <!-- Enhanced Stripe Card Element -->
+              <div class="mb-8">
+                <div class="flex items-center mb-6">
+                  <div class="p-2 bg-indigo-500 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
                   </div>
-                  <div id="card-errors" role="alert" class="text-red-600 text-sm mt-2"></div>
+                  <h3 class="text-xl font-bold text-gray-800">Payment Method</h3>
+                </div>
+                
+                <!-- Simple card input design -->
+                <div class="relative">
+                  <div class="bg-white border-2 border-indigo-200 rounded-xl p-6 shadow-lg focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/20 transition-all duration-300">
+                    <div class="flex justify-between items-center mb-4">
+                      <div class="text-sm font-medium text-indigo-600 tracking-wide">PAYMENT DETAILS</div>
+                      <div class="flex space-x-2">
+                        <div class="w-8 h-5 bg-blue-500 rounded-sm"></div>
+                        <div class="w-8 h-5 bg-red-500 rounded-sm"></div>
+                        <div class="w-8 h-5 bg-yellow-500 rounded-sm"></div>
+                      </div>
+                    </div>
+                    
+                    <div id="card-element" class="min-h-[50px] py-3">
+                      <!-- Stripe Elements will create form elements here -->
+                    </div>
+                  </div>
+                  <div id="card-errors" role="alert" class="text-red-600 text-sm mt-3 font-medium px-2"></div>
                 </div>
               </div>
 
-              <!-- Terms and Conditions -->
-              <div class="mb-6">
-                <label class="flex items-start">
+              <!-- Enhanced Terms and Conditions -->
+              <div class="mb-8">
+                <label class="flex items-start group cursor-pointer">
                   <input
                     v-model="agreedToTerms"
                     type="checkbox"
-                    class="mt-1 mr-3 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    class="mt-1 mr-4 w-5 h-5 text-indigo-600 border-2 border-gray-300 rounded focus:ring-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all duration-300"
                   />
-                  <span class="text-sm text-gray-700">
+                  <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors leading-relaxed">
                     I agree to the 
-                    <a href="#" class="text-primary-600 hover:text-primary-700 underline">Terms and Conditions</a>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-700 underline font-semibold transition-colors">Terms and Conditions</a>
                     and 
-                    <a href="#" class="text-primary-600 hover:text-primary-700 underline">Privacy Policy</a>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-700 underline font-semibold transition-colors">Privacy Policy</a>
                   </span>
                 </label>
               </div>
 
-              <!-- Submit Button -->
+              <!-- Enhanced Submit Button -->
               <button
                 @click="processDonation"
                 :disabled="!canSubmit || processing"
                 :class="[
-                  'w-full py-4 px-6 rounded-lg font-semibold text-lg transition-colors',
+                  'w-full py-5 px-8 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center transform shadow-xl',
                   canSubmit && !processing
-                    ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white hover:scale-105 hover:shadow-2xl'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
                 ]"
               >
-                <span v-if="processing">
-                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                <span v-if="processing" class="flex items-center">
+                  <div class="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
                   {{ donationDetails.type === 'subscription' ? 'Setting up...' : 'Processing...' }}
                 </span>
-                <span v-else>
+                <span v-else class="flex items-center">
+                  <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                  </svg>
                   {{ donationDetails.type === 'subscription' 
                     ? `Set up Monthly Donation (RM${finalAmount}/month)` 
                     : `Complete Donation (RM${finalAmount})` 
@@ -180,11 +271,14 @@
                 </span>
               </button>
 
-              <!-- Security Notice -->
-              <div class="mt-4 text-center">
-                <p class="text-xs text-gray-500">
-                  🔒 Your payment information is secure and encrypted.
-                </p>
+              <!-- Enhanced Security Notice -->
+              <div class="mt-6 text-center">
+                <div class="inline-flex items-center px-4 py-2 bg-gray-50 rounded-xl border border-gray-200">
+                  <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
+                  <span class="text-xs text-gray-600 font-medium">Your payment information is secure and encrypted</span>
+                </div>
               </div>
             </div>
           </div>
@@ -192,34 +286,39 @@
       </div>
     </section>
 
-    <!-- Success Modal -->
-    <div v-if="showSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-        <div class="text-center">
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
+    <!-- Enhanced Success Modal -->
+    <div v-if="showSuccessModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 transform transition-all duration-300 scale-100">
+        <div class="p-8 text-center">
+          <!-- Success Animation -->
+          <div class="relative w-24 h-24 mx-auto mb-6">
+            <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
+            <div class="relative w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+              <svg class="w-12 h-12 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
           </div>
-          <h3 class="text-2xl font-bold text-gray-900 mb-2">
+
+          <h3 class="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
             {{ donationDetails.type === 'subscription' ? 'Monthly Donation Set Up!' : 'Donation Successful!' }}
           </h3>
-          <p class="text-gray-600 mb-6">
+          <p class="text-gray-600 mb-8 leading-relaxed text-lg">
             {{ donationDetails.type === 'subscription' 
               ? `Thank you for setting up a monthly donation of RM${finalAmount}. Your first payment has been processed and future payments will be automatically charged monthly.`
               : `Thank you for your generous donation of RM${finalAmount}. Your contribution makes a real difference in children's lives!`
             }}
           </p>
-          <div class="space-y-3">
+          <div class="space-y-4">
             <button
               @click="goToDonations"
-              class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
+              class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
               Back to Donations
             </button>
             <button
               @click="closeModal"
-              class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors"
+              class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 px-8 rounded-xl font-semibold transition-all duration-300 border border-gray-300 hover:border-gray-400"
             >
               Close
             </button>
@@ -229,7 +328,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
