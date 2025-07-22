@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get the correct base URL
-  const baseUrl = process.env.SITE_URL || 'https://child-bridge-r1fixzif5-liew-lik-seongs-projects.vercel.app';
+  const baseUrl = process.env.SITE_URL || 'https://child-bridge.vercel.app';
   const redirectUrl = `${baseUrl}/auth/set-password`;
 
   console.log('Inviting user with redirect URL:', redirectUrl);

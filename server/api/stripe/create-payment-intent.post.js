@@ -191,7 +191,7 @@ export default defineEventHandler(async (event) => {
       paymentIntentData.payment_method = payment_method_id;
       paymentIntentData.confirm = true;
       
-      const origin = getHeader(event, 'origin') || getHeader(event, 'host') || 'https://child-bridge-r1fixzif5-liew-lik-seongs-projects.vercel.app';
+      const origin = getHeader(event, 'origin') || getHeader(event, 'host') || 'https://child-bridge.vercel.app';
       paymentIntentData.return_url = `${origin}/payment-success`;
       
       try {
